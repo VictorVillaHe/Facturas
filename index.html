@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>FacturaIA - Control Local</title><!-- Soporte PWA e instalación nativa --><link rel="manifest" href="manifest.json"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="FacturaIA"><link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png"><!-- Importamos el SDK oficial de Google Generative AI para navegadores --><script type="importmap">
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>FacturaIA - Control Local</title><link rel="manifest" href="manifest.json"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="FacturaIA"><link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png"><script type="importmap">
   {
     "imports": {
       "@google/generative-ai": "https://esm.run/@google/generative-ai"
@@ -29,7 +29,7 @@ button{border:0;border-radius:14px;padding:12px 14px;background:var(--acc);color
 .kpi b{display:block;font-size:24px;color:var(--acc)}
 .tabs{position:fixed;left:0;right:0;bottom:0;background:#101026ef;backdrop-filter:blur(10px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);z-index:9;padding-bottom:env(safe-area-inset-bottom)}
 .tab{padding:9px 3px;text-align:center;color:#c3c7df;font-size:12px;cursor:pointer}
-.tab.active{color:var(--acc);font-weight:900}.tab span{display:block;font-size:20px}
+.tab.active{color:var(--acc);font-weight:900}.tab span{display:block;font-size:200%}
 .hide{display:none!important}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .row3{display:grid;grid-template-columns:1fr;gap:9px}
@@ -60,7 +60,6 @@ label{display:block;font-size:12px;color:#b9c0db;margin-top:6px}
 @media(min-width:780px){.grid{grid-template-columns:repeat(4,1fr)}.row{grid-template-columns:repeat(4,1fr)}.row3{grid-template-columns:repeat(3,1fr)}.tabs{left:50%;transform:translateX(-50%);max-width:600px;border-radius:24px 24px 0 0}.wrap{padding-bottom:110px}}</style>
 </head><body>
 
-<!-- PANTALLA DE ACCESO -->
 <div id="lockScreen">
     <div class="box card">
         <span style="font-size:40px">🔒</span>
@@ -75,23 +74,17 @@ label{display:block;font-size:12px;color:#b9c0db;margin-top:6px}
 <main id="appContent" class="wrap hide">
 <div class="top"><div><h2 style="margin:0;font-size:20px">FacturaIA</h2><div class="mut" style="font-size:12px">Control Local Inteligente</div></div><button class="bad" style="padding:6px 10px;font-size:12px" onclick="window.resetAll()">Borrar todo</button></div>
 
-<!-- SECCIÓN 0: CAPTURA E IA -->
 <section id="p0"><div class="card"><div class="section-title"><h3>Nuevo ticket</h3><button id="btnOCR" class="warn" onclick="window.analyzeImageWithIA()">Reanalizar con IA</button></div><input id="cam" class="field" type="file" accept="image/*" capture="environment" onchange="window.loadPhoto(event)"><img id="preview" class="photo hide"><div class="bar"><i id="ocrBar"></i></div><div id="ocrStatus" class="mini">Toma una foto al ticket o selecciona un archivo para comenzar.</div><div class="chips" id="validationChips"></div><div class="row"><div><label id="lblStore">Lugar/Comercio</label><input id="store" class="field" oninput="window.validateFields()"></div><div><label id="lblDate">Fecha ticket</label><input id="date" class="field" type="date" oninput="window.validateFields()"></div><div><label id="lblTotal">Total mxn</label><input id="total" class="field" type="number" step=".01" oninput="window.validateFields()"></div><div><label>Vence factura</label><input id="due" class="field" type="date"></div></div><div class="row"><div><label id="lblFolio">Folio/Check</label><input id="folio" class="field" oninput="window.validateFields()"></div><div><label id="lblRef">Referencia/Código</label><input id="ref" class="field"></div><div><label id="lblUrl">URL Factura</label><input id="invoiceUrl" class="field" oninput="window.validateFields()"></div><div><label id="lblMethod">Vía</label><select id="method" class="field"><option>Web</option><option>WhatsApp</option><option>Email</option><option>Otro</option></select></div></div><div class="row"><div><label>Subtotal</label><input id="subtotal" class="field" type="number" step=".01"></div><div><label>Propina / Servicio</label><input id="service" class="field" type="number" step=".01"></div><div><label>RFC Emisor</label><input id="issuerRfc" class="field"></div><div><label>Email Emisor</label><input id="issuerEmail" class="field"></div></div><textarea id="data" class="field" rows="4" placeholder="Texto interpretado por la IA..."></textarea><div class="row"><select id="status" class="field"><option>Pendiente</option><option>Solicitada</option><option>Facturada</option></select><button onclick="window.saveTicket()">Guardar local</button><button class="ghost" onclick="window.completeDefaults()">Llenar campos</button><button class="warn" onclick="window.invoiceNow()">Facturar ya</button></div><div class="row"><button class="ghost" onclick="window.shareTicket()">Compartir ticket</button><button class="ghost" onclick="window.copyMessageCurrent()">Copiar texto fiscal</button></div></div><div id="kpis" class="grid"></div></section>
 
-<!-- SECCIÓN 1: HISTORIAL -->
 <section id="p1" class="hide"><div class="card"><h3>Historial de compras</h3><input id="q" class="field" placeholder="Buscar comercio o RFC..." oninput="window.render()"><div class="row"><button onclick="window.exportJSON()">Exportar Respaldo</button><button class="ghost" onclick="document.getElementById('imp').click()">Importar</button><button onclick="window.exportCSV()">Exportar CSV (Excel)</button></div><input id="imp" type="file" accept="application/json" class="hide" onchange="window.importJSON(event)"></div><div id="list"></div></section>
 
-<!-- SECCIÓN 2: ALERTAS -->
 <section id="p2" class="hide"><div class="card"><h3>Próximos a vencer (30 días)</h3><div id="alerts"></div></div></section>
 
-<!-- SECCIÓN 3: PERFIL FISCAL -->
 <section id="p3" class="hide"><div class="card"><div class="section-title"><h3>Mis Datos Fiscales</h3><button onclick="window.saveProfile()">Guardar perfil</button></div><div class="row3"><div><label>Razón social</label><input id="pfName" class="field"></div><div><label>Mi RFC</label><input id="pfRfc" class="field"></div><div><label>Régimen fiscal</label><input id="pfRegimen" class="field"></div></div><div class="row3"><div><label>Domicilio</label><input id="pfAddress" class="field"></div><div><label>Colonia y C.P.</label><input id="pfColony" class="field"></div><div><label>Ciudad y Estado</label><input id="pfCity" class="field"></div></div><div class="row3"><div><label>Uso de CFDI</label><input id="pfCfdi" class="field"></div><div><label>Mi Correo</label><input id="pfEmail" class="field"></div><div><label>Forma de pago</label><input id="pfPay" class="field"></div></div></div><div class="card"><h3>Logs de diagnóstico</h3><div id="debugApp" class="debug">Sistema de IA Iniciado. Listo en Celular.</div></div></section></main>
 
 <nav id="appNav" class="tabs hide"><div class="tab active" onclick="window.tab(0)"><span>📷</span>Escanear</div><div class="tab" onclick="window.tab(1)"><span>📜</span>Historial</div><div class="tab" onclick="window.tab(2)"><span>⏰</span>Alertas</div><div class="tab" onclick="window.tab(3)"><span>👤</span>Perfil</div></nav>
 
-<!-- BLOQUE 1: FUNCIONES CRÍTICAS (Inmunes a fallos de carga externa/módulos) -->
 <script>
-// Forzamos la definición de checkAccess inmediatamente para evitar el Uncaught TypeError
 window.checkAccess = function() {
     var inputEl = document.getElementById("passInput");
     if (!inputEl) return;
@@ -108,7 +101,6 @@ window.checkAccess = function() {
     }
 };
 
-// Comprobación de desbloqueo rápido al arranque directo
 if(localStorage.getItem("app_permanent_unlocked") === "true") {
     if(document.getElementById("lockScreen")) document.getElementById("lockScreen").classList.add("hide");
     if(document.getElementById("appContent")) document.getElementById("appContent").classList.remove("hide");
@@ -116,14 +108,14 @@ if(localStorage.getItem("app_permanent_unlocked") === "true") {
 }
 </script>
 
-<!-- BLOQUE 2: LÓGICA DE LA APLICACIÓN Y MÓDULOS DE IA -->
 <script type="module">
 import { GoogleGenAI } from "@google/generative-ai";
 
-const ENCRYPTED_KEY = "\x16\x12\x03\x30\x04\x31\x19\x1f\x39\x15\x3c\x13\x11\x32\x04\x13\x25\x36\x3c\x2c\x24\x38\x32\x15\x1e\x32\x00\x1f\x39\x1e\x2b\x36\x03\x2c\x30\x3d\x23\x0c\x18\x25\x34\x01\x11"; 
+// Reemplazamos la cadena problemática por un array numérico limpio (inmune a fallos de sintaxis)
+const KEY_ARRAY = [22, 18, 3, 48, 4, 49, 25, 31, 57, 21, 60, 19, 17, 50, 4, 13, 37, 54, 60, 44, 36, 56, 50, 21, 30, 50, 0, 31, 57, 30, 43, 54, 3, 44, 48, 61, 35, 12, 24, 37, 52, 1, 17];
 
-window.decryptKey = function(cipher, salt) {
-    try { return cipher.split("").map((c, i) => String.fromCharCode(c.charCodeAt(0) ^ salt.charCodeAt(i % salt.length))).join(""); } catch(e) { return ""; }
+window.decryptKey = function(arr, salt) {
+    try { return arr.map((num, i) => String.fromCharCode(num ^ salt.charCodeAt(i % salt.length))).join(""); } catch(e) { return ""; }
 };
 
 window.items={}; window.photo=""; window.sourceCanvas=null;
@@ -177,7 +169,7 @@ window.loadPhoto = function(ev){
 
 window.analyzeImageWithIA = async function(){
     if(!window.sourceCanvas){alert("Primero toma o carga una foto");return}
-    const REAL_API_KEY = window.decryptKey(ENCRYPTED_KEY, "VVH");
+    const REAL_API_KEY = window.decryptKey(KEY_ARRAY, "VVH");
     if(!REAL_API_KEY){ window.setText("ocrStatus","Error de Clave."); return; }
     
     window.el("btnOCR").disabled=true;
@@ -206,8 +198,7 @@ window.analyzeImageWithIA = async function(){
 
         const result = await model.generateContent([prompt, imagePart]);
         const responseText = await result.response.text();
-        const cleanJson = responseText.replace(/```json|
-```/g, "").trim();
+        const cleanJson = responseText.replace(/```json|```/g, "").trim();
         const data = JSON.parse(cleanJson);
         
         window.applyExtracted(data);
@@ -281,7 +272,6 @@ window.initApp = function(){
     window.loadAll(); window.profileToForm(); window.validateFields(); window.render();
 };
 
-// Si ya fue desbloqueado previamente, arranca la app de inmediato
 if(localStorage.getItem("app_permanent_unlocked") === "true") {
     window.initApp();
 }
