@@ -6,6 +6,7 @@
 <title>FacturaIA - Control Local</title>
 
 <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#101026">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FacturaIA">
@@ -14,7 +15,7 @@
 <script type="importmap">
 {
   "imports": {
-    "@google/generative-ai": "https://esm.run/@google/generative-ai"
+    "@google/genai": "https://esm.run/@google/genai"
   }
 }
 </script>
@@ -232,26 +233,7 @@ label{
     color:#8ef0df;
 }
 
-#lockScreen{
-    position:fixed;
-    top:0;
-    left:0;
-    width:100vw;
-    height:100vh;
-    background:radial-gradient(circle at top,#11143b,#0a0a1a 55%,#070711);
-    z-index:99999;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    padding:20px;
-}
-#lockScreen .box{
-    max-width:360px;
-    width:100%;
-    text-align:center;
-}
-
+#lockScreen,
 #apiSetupScreen{
     position:fixed;
     top:0;
@@ -259,15 +241,21 @@ label{
     width:100vw;
     height:100vh;
     background:radial-gradient(circle at top,#11143b,#0a0a1a 55%,#070711);
-    z-index:99998;
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:center;
     padding:20px;
 }
+#lockScreen{
+    z-index:99999;
+}
+#apiSetupScreen{
+    z-index:99998;
+}
+#lockScreen .box,
 #apiSetupScreen .box{
-    max-width:420px;
+    max-width:380px;
     width:100%;
     text-align:center;
 }
@@ -378,15 +366,15 @@ label{
 
             <div class="row">
                 <div>
-                    <label id="lblStore">Lugar/Comercio</label>
+                    <label>Lugar/Comercio</label>
                     <input id="store" class="field" oninput="window.validateFields()">
                 </div>
                 <div>
-                    <label id="lblDate">Fecha ticket</label>
+                    <label>Fecha ticket</label>
                     <input id="date" class="field" type="date" oninput="window.validateFields()">
                 </div>
                 <div>
-                    <label id="lblTotal">Total MXN</label>
+                    <label>Total MXN</label>
                     <input id="total" class="field" type="number" step=".01" oninput="window.validateFields()">
                 </div>
                 <div>
@@ -397,19 +385,19 @@ label{
 
             <div class="row">
                 <div>
-                    <label id="lblFolio">Folio/Check</label>
-                    <input id="folio" class="field" oninput="window.validateFields()">
+                    <label>Folio/Check</label>
+                    <input id="folio" class="field">
                 </div>
                 <div>
-                    <label id="lblRef">Referencia/Código</label>
+                    <label>Referencia/Código</label>
                     <input id="ref" class="field">
                 </div>
                 <div>
-                    <label id="lblUrl">URL Factura</label>
-                    <input id="invoiceUrl" class="field" oninput="window.validateFields()">
+                    <label>URL Factura</label>
+                    <input id="invoiceUrl" class="field">
                 </div>
                 <div>
-                    <label id="lblMethod">Vía</label>
+                    <label>Vía</label>
                     <select id="method" class="field">
                         <option>Web</option>
                         <option>WhatsApp</option>
@@ -468,7 +456,7 @@ label{
             <input id="q" class="field" placeholder="Buscar comercio o RFC..." oninput="window.render()">
 
             <div class="row">
-                <button onclick="window.exportJSON()">Exportar Respaldo</button>
+                <button onclick="window.exportJSON()">Exportar respaldo</button>
                 <button class="ghost" onclick="document.getElementById('imp').click()">Importar</button>
                 <button onclick="window.exportCSV()">Exportar CSV Excel</button>
             </div>
@@ -653,8 +641,7 @@ window.saveApiKeyAndContinue = function(){
 };
 
 window.changeApiKey = function(){
-    var current = window.getApiKey();
-    var newKey = prompt("Pega tu nueva Gemini API Key:", current ? "API Key actual guardada" : "");
+    var newKey = prompt("Pega tu nueva Gemini API Key:");
 
     if(newKey && newKey.trim().length >= 20){
         window.saveApiKeyLocal(newKey.trim());
@@ -706,6 +693,7 @@ document.addEventListener("DOMContentLoaded", function(){
         window.hide("apiSetupScreen");
         window.hide("appContent");
         window.hide("appNav");
+
         setTimeout(function(){
             if(passInput) passInput.focus();
         }, 300);
@@ -714,7 +702,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 
 <script type="module">
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 window.items = {};
 window.photo = "";
@@ -805,16 +793,16 @@ window.loadPhoto = function(ev){
 
         im.onload = function(){
             var c = document.createElement("canvas");
-            var m = 1024;
-            var sc = Math.min(1, m / im.width);
+            var maxWidth = 1200;
+            var scale = Math.min(1, maxWidth / im.width);
 
-            c.width = Math.round(im.width * sc);
-            c.height = Math.round(im.height * sc);
+            c.width = Math.round(im.width * scale);
+            c.height = Math.round(im.height * scale);
 
             c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
 
             window.sourceCanvas = c;
-            window.photo = c.toDataURL("image/jpeg", 0.75);
+            window.photo = c.toDataURL("image/jpeg", 0.80);
 
             window.el("preview").src = window.photo;
             window.el("preview").classList.remove("hide");
@@ -830,6 +818,29 @@ window.loadPhoto = function(ev){
     };
 
     r.readAsDataURL(f);
+};
+
+window.extractJsonFromText = function(text){
+    if(!text) return null;
+
+    var cleaned = String(text)
+        .replace(/```json/gi, "")
+        .replace(/```/g, "")
+        .trim();
+
+    try{
+        return JSON.parse(cleaned);
+    }catch(e){}
+
+    var first = cleaned.indexOf("{");
+    var last = cleaned.lastIndexOf("}");
+
+    if(first >= 0 && last > first){
+        var jsonText = cleaned.slice(first, last + 1);
+        return JSON.parse(jsonText);
+    }
+
+    throw new Error("No se pudo leer JSON de la respuesta de Gemini.");
 };
 
 window.analyzeImageWithIA = async function(){
@@ -851,26 +862,26 @@ window.analyzeImageWithIA = async function(){
     window.setText("ocrStatus", "Gemini IA analizando ticket...");
 
     try{
-        const genAI = new GoogleGenerativeAI(REAL_API_KEY);
-        const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash"
+        const ai = new GoogleGenAI({
+            apiKey: REAL_API_KEY
         });
 
-        const base64Image = window.sourceCanvas.toDataURL("image/jpeg").split(",")[1];
-
-        const imagePart = {
-            inlineData: {
-                data: base64Image,
-                mimeType: "image/jpeg"
-            }
-        };
+        const base64Image = window.sourceCanvas
+            .toDataURL("image/jpeg")
+            .split(",")[1];
 
         const prompt = `
 Analiza este ticket mexicano.
 
 Devuelve SOLO JSON válido, sin markdown, sin explicación y sin texto adicional.
 
-Si no encuentras algún dato, usa "".
+Reglas:
+- Si no encuentras algún dato, usa "".
+- La fecha debe venir en formato YYYY-MM-DD.
+- El total debe ser número, no texto.
+- Si ves una URL de facturación o código QR relacionado con facturación, intenta extraer la URL.
+- Si el ticket tiene folio, check, referencia o código de facturación, extrae el dato más útil.
+- No inventes información.
 
 Estructura exacta:
 {
@@ -886,21 +897,32 @@ Estructura exacta:
 }
 `;
 
-        const result = await model.generateContent([prompt, imagePart]);
-        const response = await result.response;
-        const responseText = response.text();
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [
+                {
+                    role: "user",
+                    parts: [
+                        { text: prompt },
+                        {
+                            inlineData: {
+                                mimeType: "image/jpeg",
+                                data: base64Image
+                            }
+                        }
+                    ]
+                }
+            ]
+        });
 
-        const cleanJson = responseText
-            .replace(/```json/gi, "")
-            .replace(/```/g, "")
-            .trim();
-
-        const data = JSON.parse(cleanJson);
+        const responseText = response.text || "";
+        const data = window.extractJsonFromText(responseText);
 
         window.applyExtracted(data);
 
         window.setText("ocrStatus", "Ticket procesado por IA.");
         window.el("ocrBar").style.width = "100%";
+
     }catch(e){
         console.error(e);
         window.setText("ocrStatus", "Error IA: " + e.message);
@@ -921,8 +943,14 @@ window.applyExtracted = function(x){
         window.setVal("due", window.addDays(x.date, 30));
     }
 
-    if(x.total) window.setVal("total", x.total);
-    if(x.subtotal) window.setVal("subtotal", x.subtotal);
+    if(x.total !== undefined && x.total !== null && x.total !== ""){
+        window.setVal("total", x.total);
+    }
+
+    if(x.subtotal !== undefined && x.subtotal !== null && x.subtotal !== ""){
+        window.setVal("subtotal", x.subtotal);
+    }
+
     if(x.folio) window.setVal("folio", x.folio);
     if(x.ref) window.setVal("ref", x.ref);
 
@@ -940,7 +968,12 @@ window.applyExtracted = function(x){
 
     window.el("data").value =
         "--- DETECCIONES IA ---\n" +
+        "Comercio: " + (x.store || "?") + "\n" +
+        "Fecha: " + (x.date || "?") + "\n" +
         "RFC Emisor: " + (x.rfc || "?") + "\n" +
+        "Folio: " + (x.folio || "?") + "\n" +
+        "Referencia: " + (x.ref || "?") + "\n" +
+        "URL: " + (x.url || "?") + "\n" +
         "Total: $" + (x.total || "?");
 };
 
@@ -979,7 +1012,7 @@ window.loadAll = function(){
 };
 
 window.resetAll = function(){
-    if(confirm("¿Borrar datos de la app en este dispositivo?")){
+    if(confirm("¿Borrar datos de la app en este dispositivo? Esto también borrará la API Key guardada.")){
         window.items = {};
         localStorage.removeItem("fac_ia_items");
         localStorage.removeItem("fac_ia_profile");
@@ -1059,7 +1092,7 @@ window.validateFields = function(){
     }
 
     if(!m.length){
-        h = '<span class="chip ok">Listo para Guardar</span>';
+        h = '<span class="chip ok">Listo para guardar</span>';
     }
 
     if(window.el("validationChips")){
@@ -1143,7 +1176,7 @@ window.saveTicket = function(){
     window.saveAll();
     window.render();
 
-    alert("Guardado en Historial.");
+    alert("Guardado en historial.");
 
     window.clearTicketForm();
 };
@@ -1159,7 +1192,9 @@ window.buildMessage = function(t){
         "Datos Fiscales:\n" +
         "RFC: " + p.rfc + "\n" +
         "Razón Social: " + p.name + "\n" +
-        "CP: " + p.colony;
+        "CP: " + p.colony + "\n" +
+        "Uso CFDI: " + p.cfdi + "\n" +
+        "Forma de pago: " + p.pay;
 };
 
 window.invoiceNow = function(){
@@ -1207,7 +1242,7 @@ window.render = function(){
     if(window.el("kpis")){
         window.el("kpis").innerHTML =
             '<div class="kpi"><span>Pendientes</span><b>' + pend.length + '</b></div>' +
-            '<div class="kpi"><span>Total Registros</span><b>' + a.length + '</b></div>';
+            '<div class="kpi"><span>Total registros</span><b>' + a.length + '</b></div>';
     }
 
     var box = window.el("list");
@@ -1353,6 +1388,20 @@ window.initApp = function(){
 
 if(localStorage.getItem("facturaia_unlocked") === "true" && window.hasApiKey()){
     window.initApp();
+}
+</script>
+
+<script>
+if("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+        navigator.serviceWorker.register("./sw.js")
+            .then(function(){
+                console.log("Service Worker registrado.");
+            })
+            .catch(function(error){
+                console.log("Error registrando Service Worker:", error);
+            });
+    });
 }
 </script>
 
