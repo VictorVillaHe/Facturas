@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>FacturaIA - Control Local</title>
+
+<!-- Soporte PWA e instalación nativa -->
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FacturaIA">
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png">
+
+<!-- Importamos el SDK oficial de Google Generative AI para navegadores -->
+<script type="importmap">
+  {
+    "imports": {
+      "@google/generative-ai": "https://esm.run/@google/generative-ai"
+    }
+  }
+</script>
+
+<style>
+:root{--bg:#0a0a1a;--card:#12122a;--card2:#171936;--line:#29305a;--txt:#f7f8ff;--mut:#9aa0bd;--acc:#4ECDC4;--bad:#ff6b6b;--warn:#ffd166}
+*{box-sizing:border-box}
+body{
+    margin:0;
+    background:radial-gradient(circle at top,#11143b,#0a0a1a 55%,#070711);
+    color:var(--txt);
+    font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;
+    padding-top:env(safe-area-inset-top); /* Respeta notch de iPhone/Android */
+    -webkit-touch-callout:none;
+    -webkit-user-select:none;
+    user-select:none;
+    overscroll-behavior-y:contain; /* Evita arrastrar para recargar en Chrome móvil */
+}
+button,input,select,textarea{font:inherit}
+input,textarea{ -webkit-user-select:text; user-select:text; } /* Permite escribir */
+button{border:0;border-radius:14px;padding:12px 14px;background:var(--acc);color:#031113;font-weight:900;cursor:pointer}
+.ghost{background:#232844;color:var(--txt)}.bad{background:var(--bad);color:white}.warn{background:var(--warn);color:#17110a}
+.wrap{max-width:1200px;margin:auto;padding:12px 12px 110px}
+.card{background:#12122af2;border:1px solid var(--line);border-radius:22px;padding:16px;margin:12px 0;box-shadow:0 12px 35px #0007}
+.top{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.kpi{padding:13px;border-radius:18px;background:var(--card2)}
+.kpi b{display:block;font-size:24px;color:var(--acc)}
+.tabs{position:fixed;left:0;right:0;bottom:0;background:#101026ef;backdrop-filter:blur(10px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);z-index:9;padding-bottom:env(safe-area-inset-bottom)}
+.tab{padding:9px 3px;text-align:center;color:#c3c7df;font-size:12px;cursor:pointer}
+.tab.active{color:var(--acc);font-weight:900}.tab span{display:block;font-size:20px}
+.hide{display:none!important}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.row3{display:grid;grid-template-columns:1fr;gap:9px}
+.field{width:100%;padding:12px;border-radius:14px;border:1px solid #30375f;background:#0d0f24;color:var(--txt);margin:6px 0}
+.item{background:#0d0f24;border:1px solid #293054;border-radius:18px;padding:12px;margin:10px 0}
+.photo{width:100%;max-height:300px;object-fit:contain;border-radius:16px;border:1px solid #30375f;background:#111;margin-top:10px}
+.mini{font-size:12px;color:#b9c0db;margin:6px 0}
+.debug{font-family:ui-monospace,Consolas,monospace;font-size:12px;white-space:pre-wrap;background:#07091b;border:1px solid #2b315c;border-radius:14px;padding:10px;max-height:220px;overflow:auto}
+.bar{height:9px;background:#22284f;border-radius:99px;overflow:hidden;margin:8px 0}
+.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width 0.3s}
+label{display:block;font-size:12px;color:#b9c0db;margin-top:6px}
+.section-title{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.missing{border-color:#725b22!important;background:#16142a}
+.good{border-color:#2f6b64!important}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.chip{font-size:11px;border-radius:999px;padding:4px 8px;background:#20264b;color:#d8ddff}
+.chip.warn{background:#4a3410;color:#ffd166}
+.chip.ok{background:#163a35;color:#8ef0df}
+@media(min-width:780px){.grid{grid-template-columns:repeat(4,1fr)}.row{grid-template-columns:repeat(4,1fr)}.row3{grid-template-columns:repeat(3,1fr)}.tabs{left:50%;transform:translateX(-50%);max-width:600px;border-radius:24px 24px 0 0}.wrap{padding-bottom:110px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<div class="top"><div><h2 style="margin:0;font-size:20px">FacturaIA</h2><div class="mut" style="font-size:12px">Control Local Inteligente</div></div><button class="bad" style="padding:6px 10px;font-size:12px" onclick="resetAll()">Borrar todo</button></div>
+
+<!-- SECCIÓN 0: CAPTURA E IA -->
+<section id="p0"><div class="card"><div class="section-title"><h3>Nuevo ticket</h3><button id="btnOCR" class="warn" onclick="analyzeImageWithIA()">Reanalizar con IA</button></div>
+<input id="cam" class="field" type="file" accept="image/*" capture="environment" onchange="loadPhoto(event)"><img id="preview" class="photo hide"><div class="bar"><i id="ocrBar"></i></div><div id="ocrStatus" class="mini">Toma una foto al ticket. La IA extraerá los datos automáticamente de forma inteligente.</div><div class="chips" id="validationChips"></div>
+<div class="row"><div><label id="lblStore">Lugar/Comercio</label><input id="store" class="field" oninput="validateFields()"></div><div><label id="lblDate">Fecha ticket</label><input id="date" class="field" type="date" oninput="validateFields()"></div><div><label id="lblTotal">Total mxn</label><input id="total" class="field" type="number" step=".01" oninput="validateFields()"></div><div><label>Vence factura</label><input id="due" class="field" type="date"></div></div>
+<div class="row"><div><label id="lblFolio">Folio/Check</label><input id="folio" class="field" oninput="validateFields()"></div><div><label id="lblRef">Referencia/Código</label><input id="ref" class="field"></div><div><label id="lblUrl">URL Factura</label><input id="invoiceUrl" class="field" oninput="validateFields()"></div><div><label id="lblMethod">Vía</label><select id="method" class="field"><option>Web</option><option>WhatsApp</option><option>Email</option><option>Otro</option></select></div></div>
+<div class="row"><div><label>Subtotal</label><input id="subtotal" class="field" type="number" step=".01"></div><div><label>Propina / Servicio</label><input id="service" class="field" type="number" step=".01"></div><div><label>RFC Emisor</label><input id="issuerRfc" class="field"></div><div><label>Email Emisor</label><input id="issuerEmail" class="field"></div></div>
+<textarea id="data" class="field" rows="4" placeholder="Texto interpretado por la IA..."></textarea><div class="row"><select id="status" class="field"><option>Pendiente</option><option>Solicitada</option><option>Facturada</option></select><button onclick="saveTicket()">Guardar local</button><button class="ghost" onclick="completeDefaults()">Llenar campos</button><button class="warn" onclick="invoiceNow()">Facturar ya</button></div>
+<div class="row"><button class="ghost" onclick="shareTicket()">Compartir ticket</button><button class="ghost" onclick="copyMessageCurrent()">Copiar texto fiscal</button></div></div><div id="kpis" class="grid"></div></section>
+
+<!-- SECCIÓN 1: HISTORIAL -->
+<section id="p1" class="hide"><div class="card"><h3>Historial de compras</h3><input id="q" class="field" placeholder="Buscar comercio o RFC..." oninput="render()"><div class="row"><button onclick="exportJSON()">Exportar Respaldo</button><button class="ghost" onclick="document.getElementById('imp').click()">Importar</button><button onclick="exportCSV()">Exportar CSV (Excel)</button></div><input id="imp" type="file" accept="application/json" class="hide" onchange="importJSON(event)"></div><div id="list"></div></section>
+
+<!-- SECCIÓN 2: ALERTAS -->
+<section id="p2" class="hide"><div class="card"><h3>Próximos a vencer (30 días)</h3><div id="alerts"></div></div></section>
+
+<!-- SECCIÓN 3: PERFIL FISCAL -->
+<section id="p3" class="hide"><div class="card"><div class="section-title"><h3>Mis Datos Fiscales</h3><button onclick="saveProfile()">Guardar perfil</button></div><div class="row3"><div><label>Razón social</label><input id="pfName" class="field"></div><div><label>Mi RFC</label><input id="pfRfc" class="field"></div><div><label>Régimen fiscal</label><input id="pfRegimen" class="field"></div></div><div class="row3"><div><label>Domicilio</label><input id="pfAddress" class="field"></div><div><label>Colonia y C.P.</label><input id="pfColony" class="field"></div><div><label>Ciudad y Estado</label><input id="pfCity" class="field"></div></div><div class="row3"><div><label>Uso de CFDI</label><input id="pfCfdi" class="field"></div><div><label>Mi Correo</label><input id="pfEmail" class="field"></div><div><label>Forma de pago</label><input id="pfPay" class="field"></div></div></div><div class="card"><h3>Logs de diagnóstico</h3><div id="debugApp" class="debug">Sistema de IA Iniciado. Listo en Celular.</div></div></section>
+</main>
+
+<nav class="tabs"><div class="tab active" onclick="tab(0)"><span>📷</span>Escanear</div><div class="tab" onclick="tab(1)"><span>📜</span>Historial</div><div class="tab" onclick="tab(2)"><span>⏰</span>Alertas</div><div class="tab" onclick="tab(3)"><span>👤</span>Perfil</div></nav>
+
+<script type="module">
+import { GoogleGenAI } from "@google/generative-ai";
+
+// =======================================================
+// REEMPLAZA ESTA CLAVE POR LA TUYA DE GOOGLE AI STUDIO
+// =======================================================
+const GEMINI_API_KEY = "AQ.Ab8RN6I0py8xCNJVIjDprXQ6k3-G4oAviPHCfT2_huuTyDcghA"; 
+
+window.items={};window.photo="";window.sourceCanvas=null;window.profile={name:"",rfc:"",regimen:"",address:"",colony:"",city:"",cfdi:"Gastos en general",email:"",pay:"Tarjeta de crédito"};
+
+window.el = id => document.getElementById(id);
+window.clean = s => String(s||"");
+window.setVal = (id,v) => { if(window.el(id)&&v!==undefined&&v!==null&&String(v)!==""){window.el(id).value=v} };
+window.setText = (id,t) => { if(window.el(id)){window.el(id).textContent=t||""} };
+window.today = () => new Date().toISOString().slice(0,10);
+window.addDays = (ds,n) => { var d=new Date(ds||window.today()); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
+window.gid = () => Date.now()+"_"+Math.random().toString(36).slice(2,8);
+
+window.log = function(t){
+    var s=new Date().toLocaleTimeString()+" | "+t;
+    if(window.el("debugApp")){window.el("debugApp").textContent=s+String.fromCharCode(10)+window.el("debugApp").textContent}
+    console.log(s);
+};
+
+window.tab = function(n){
+    var s=["p0","p1","p2","p3"]; var t=document.getElementsByClassName("tab");
+    for(var i=0;i<4;i++){window.el(s[i]).classList.toggle("hide",i!==n);t[i].classList.toggle("active",i===n)}
+    window.render();
+};
+
+window.loadPhoto = function(ev){
+    window.log("Imagen seleccionada");
+    var f=ev.target.files[0]; if(!f){return}
+    var r=new FileReader();
+    r.onload=function(){
+        var im=new Image();
+        im.onload=function(){
+            var c=document.createElement("canvas");
+            var m=1024; // Reducción de escala óptima para subidas rápidas en red móvil 4G/5G
+            var sc=Math.min(1,m/im.width);
+            c.width=Math.round(im.width*sc); c.height=Math.round(im.height*sc);
+            c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+            window.sourceCanvas=c;
+            window.photo=c.toDataURL("image/jpeg",0.75);
+            window.el("preview").src=window.photo;
+            window.el("preview").classList.remove("hide");
+            window.setText("ocrStatus","Foto lista. Enviando a Gemini IA...");
+            setTimeout(function(){ window.analyzeImageWithIA() },300);
+        };
+        im.src=r.result;
+    };
+    r.readAsDataURL(f);
+};
+
+window.analyzeImageWithIA = async function(){
+    if(!window.sourceCanvas){alert("Primero toma una foto");return}
+    if(GEMINI_API_KEY === "AQUÍ_PEGA_TU_API_KEY" || !GEMINI_API_KEY){
+        window.setText("ocrStatus","Error: Clave API de Gemini vacía. Edita el código.");
+        return;
+    }
+    window.el("btnOCR").disabled=true;
+    window.el("ocrBar").style.width="40%";
+    window.setText("ocrStatus","La IA está leyendo montos, RFC y fechas...");
+
+    try {
+        const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+        const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        const base64Image = window.sourceCanvas.toDataURL("image/jpeg").split(",")[1];
+        const imagePart = { inlineData: { data: base64Image, mimeType: "image/jpeg" } };
+
+        const prompt = `Analiza este ticket mexicano. Extrae los datos y devuélvelos SOLO en un formato JSON estricto sin texto adicional. Si no encuentras algo pon "".
+        Reglas: total y subtotal en formato número decimal suelto. Date en formato YYYY-MM-DD (si dice el mes como 'Mar 2026', infiere la fecha como 2026-03-01). Limpia errores del arroba en correos.
+        Estructura JSON:
+        {
+          "store": "Nombre del negocio",
+          "date": "YYYY-MM-DD",
+          "total": 0.00,
+          "subtotal": 0.00,
+          "folio": "Folio o ticket",
+          "ref": "Código de facturación/referencia",
+          "url": "Sitio web para facturar",
+          "email": "correo facturación",
+          "rfc": "RFC Emisor"
+        }`;
+
+        const result = await model.generateContent([prompt, imagePart]);
+        const responseText = await result.response.text();
+        const cleanJson = responseText.replace(/```json|
+```/g, "").trim();
+        const data = JSON.parse(cleanJson);
+        
+        window.applyExtracted(data);
+        window.setText("ocrStatus","¡Procesado exitosamente por Gemini IA!");
+        window.el("ocrBar").style.width="100%";
+    } catch (e) {
+        window.setText("ocrStatus","Error de IA: "+e.message);
+        window.el("ocrBar").style.width="0%";
+    }
+    window.el("btnOCR").disabled=false;
+    window.validateFields();
+};
+
+window.applyExtracted = function(x){
+    if(x.store) window.setVal("store",x.store);
+    if(x.date) { window.setVal("date",x.date); window.setVal("due",window.addDays(x.date,30)); }
+    if(x.total) window.setVal("total",x.total);
+    if(x.subtotal) window.setVal("subtotal",x.subtotal);
+    if(x.folio) window.setVal("folio",x.folio);
+    if(x.ref) window.setVal("ref",x.ref);
+    if(x.url) { window.setVal("invoiceUrl",x.url); window.el("method").value="Web"; }
+    if(x.email) { window.setVal("issuerEmail",x.email); window.el("method").value="Email"; }
+    if(x.rfc) window.setVal("issuerRfc",x.rfc);
+
+    window.el("data").value = `--- DETECCIONES AUTOMÁTICAS IA --- \nRFC Emisor: ${x.rfc||'?'}\nTotal: $${x.total||'?'}\nEmail: ${x.email||'?'}\nURL: ${x.url||'?'}`;
+};
+
+window.arr = function(){ var a=[]; for(var k in window.items){a.push(window.items[k])} a.sort((x,y)=>String(x.due||"").localeCompare(String(y.due||""))); return a; };
+window.saveAll = function(){ localStorage.setItem("fac_ia_items",JSON.stringify(window.items)); localStorage.setItem("fac_ia_profile",JSON.stringify(window.profile)); };
+window.loadAll = function(){ try{window.items=JSON.parse(localStorage.getItem("fac_ia_items")||"{}")}catch(e){} try{var p=JSON.parse(localStorage.getItem("fac_ia_profile")||"null");if(p){window.profile=p}}catch(e){} };
+window.resetAll = function(){ if(confirm("¿Borrar historial local?")){window.items={}; window.saveAll(); window.render();} };
+window.profileToForm = function(){ window.setVal("pfName",window.profile.name); window.setVal("pfRfc",window.profile.rfc); window.setVal("pfRegimen",window.profile.regimen); window.setVal("pfAddress",window.profile.address); window.setVal("pfColony",window.profile.colony); window.setVal("pfCity",window.profile.city); window.setVal("pfCfdi",window.profile.cfdi); window.setVal("pfEmail",window.profile.email); window.setVal("pfPay",window.profile.pay); };
+window.formToProfile = function(){ window.profile={name:window.el("pfName").value,rfc:window.el("pfRfc").value,regimen:window.el("pfRegimen").value,address:window.el("pfAddress").value,colony:window.el("pfColony").value,city:window.el("pfCity").value,cfdi:window.el("pfCfdi").value,email:window.el("pfEmail").value,pay:window.el("pfPay").value}; return window.profile; };
+window.saveProfile = function(){ window.formToProfile(); window.saveAll(); alert("Datos fiscales guardados."); };
+
+window.missingInfo = function(){ var m=[]; if(!window.el("store").value){m.push("tienda")} if(!window.el("date").value){m.push("fecha")} if(!(parseFloat(window.el("total").value)||0)){m.push("total")} return m; };
+window.validateFields = function(){ var m=window.missingInfo(); var ids=["store","date","total"]; for(var i=0; i<ids.length; i++){ if(window.el(ids[i])){window.el(ids[i]).classList.toggle("missing",!window.el(ids[i]).value);window.el(ids[i]).classList.toggle("good",!!window.el(ids[i]).value);}} var h=""; for(var j=0; j<m.length; j++){h+=`<span class="chip warn">Falta ${m[j]}</span>`} if(!m.length){h='<span class="chip ok">Listo para Guardar</span>'} window.el("validationChips").innerHTML=h; return m; };
+window.completeDefaults = function(){ if(!window.el("store").value){window.el("store").value="Comercio local"} if(!window.el("date").value){window.el("date").value=window.today()} if(!window.el("due").value){window.el("due").value=window.addDays(window.el("date").value,30)} window.validateFields(); };
+
+window.currentTicketObj = function(){ window.formToProfile(); return {id:window.gid(),store:window.el("store").value,date:window.el("date").value,due:window.el("due").value,total:parseFloat(window.el("total").value)||0,subtotal:parseFloat(window.el("subtotal").value)||0,service:parseFloat(window.el("service").value)||0,issuerRfc:window.el("issuerRfc").value,issuerEmail:window.el("issuerEmail").value,folio:window.el("folio").value,ref:window.el("ref").value,invoiceUrl:window.el("invoiceUrl").value,data:window.el("data").value,method:window.el("method").value,status:window.el("status").value,photo:window.photo,profile:window.profile}; };
+window.saveTicket = function(){ var t=window.currentTicketObj(); window.items[t.id]=t; window.saveAll(); window.render(); alert("Guardado en el historial móvil."); };
+
+window.buildMessage = function(t){ var p=t.profile||window.profile; return `Solicitud de factura:\n\nEstablecimiento: ${t.store}\nFecha: ${t.date}\nTotal: $${t.total}\nFolio: ${t.folio||'N/A'}\n\nDatos Fiscales:\nRFC: ${p.rfc}\nRazón Social: ${p.name}\nRégimen: ${p.regimen}\nCP: ${p.colony}\nUso CFDI: ${p.cfdi}\nForma Pago: ${p.pay}`; };
+window.invoiceNow = function(){ var t=window.currentTicketObj(); if(t.invoiceUrl){window.open(t.invoiceUrl,"_blank")}else if(t.issuerEmail){window.location.href=`mailto:${t.issuerEmail}?subject=Facturacion&body=${encodeURIComponent(window.buildMessage(t))}`}else{alert("Copia los datos fiscales abajo, no hay canal automático asignado.")} };
+window.copyMessageCurrent = function(){ navigator.clipboard.writeText(window.buildMessage(window.currentTicketObj())); alert("Datos copiados para pegar en WhatsApp o portales"); };
+window.shareTicket = function(){ if(navigator.share){navigator.share({title:'Ticket',text:window.buildMessage(window.currentTicketObj())})} };
+
+window.render = function(){
+    var a=window.arr(); var pend=a.filter(x=>x.status!=="Facturada");
+    window.el("kpis").innerHTML=`<div class=kpi><span>Pendientes</span><b>${pend.length}</b></div><div class=kpi><span>Total Mes</span><b>$${a.reduce((s,x)=>s+x.total,0).toFixed(0)}</b></div>`;
+    var box=window.el("list"); if(!box)return; box.innerHTML=""; var q=window.el("q").value.toLowerCase();
+    a.filter(x=>x.store.toLowerCase().includes(q)).forEach(function(x){
+        var d=document.createElement("div"); d.className="item"; d.innerHTML=`<h3>${x.store} [${x.status}]</h3><p class=mut>${x.date} | Folio: ${x.folio||'-'}</p><p><b>$${x.total.toFixed(2)}</b></p>`;
+        var b=document.createElement("button"); b.textContent="✓"; b.onclick=function(){window.items[x.id].status="Facturada";window.saveAll();window.render();}; d.appendChild(b);
+        var b2=document.createElement("button"); b2.textContent="✕"; b2.className="bad"; b2.onclick=function(){delete window.items[x.id];window.saveAll();window.render();}; d.appendChild(document.createTextNode(" ")); d.appendChild(b2);
+        box.appendChild(d);
+    });
+    var al=window.el("alerts"); al.innerHTML="";
+    pend.forEach(x=>{ al.innerHTML+=`<div class=item style="border-left:4px solid var(--warn)">${x.store} - Vence: ${x.due} (Monto: $${x.total})</div>` });
+};
+
+window.exportJSON = function(){ var a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([JSON.stringify(window.items)],{type:"text/plain"})); a.download="respaldo_facturas.json"; a.click(); };
+window.importJSON = function(ev){ var f=ev.target.files[0]; if(!f)return; var r=new FileReader(); r.onload=function(){ window.items=JSON.parse(r.result||"{}"); window.saveAll(); window.render(); }; r.readAsText(f); };
+
+// Registro del Service Worker para funcionamiento PWA sin internet
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
+}
+
+window.onload = function(){ window.loadAll(); window.profileToForm(); window.validateFields(); window.render(); };
+</script>
+</body>
+</html>
