@@ -31,6 +31,8 @@
     --acc:#4ECDC4;
     --bad:#ff6b6b;
     --warn:#ffd166;
+    --ok:#8ef0df;
+    --orange:#ff9f43;
 }
 *{box-sizing:border-box}
 body{
@@ -65,6 +67,8 @@ button:disabled{
 .ghost{background:#232844;color:var(--txt)}
 .bad{background:var(--bad);color:white}
 .warn{background:var(--warn);color:#17110a}
+.okbtn{background:#0f766e;color:white}
+.orange{background:var(--orange);color:#17110a}
 .wrap{max-width:1200px;margin:auto;padding:12px 12px 110px}
 .card{
     background:#12122af2;
@@ -89,11 +93,17 @@ button:disabled{
     padding:13px;
     border-radius:18px;
     background:var(--card2);
+    border:1px solid #242b50;
+}
+.kpi span{
+    color:#c3c7df;
+    font-size:12px;
 }
 .kpi b{
     display:block;
     font-size:24px;
     color:var(--acc);
+    margin-top:4px;
 }
 .tabs{
     position:fixed;
@@ -158,6 +168,15 @@ button:disabled{
     border:1px solid #30375f;
     background:#111;
     margin-top:10px;
+}
+.thumb{
+    width:100%;
+    max-height:180px;
+    object-fit:contain;
+    border-radius:14px;
+    border:1px solid #30375f;
+    background:#111;
+    margin:8px 0;
 }
 .mini{
     font-size:12px;
@@ -232,7 +251,65 @@ label{
     background:#163a35;
     color:#8ef0df;
 }
-
+.chip.badchip{
+    background:#471b25;
+    color:#ffb3c1;
+}
+.chip.orangechip{
+    background:#4a2e10;
+    color:#ffc078;
+}
+.ticket-head{
+    display:flex;
+    gap:10px;
+    justify-content:space-between;
+    align-items:flex-start;
+}
+.ticket-title{
+    margin:0;
+    font-size:18px;
+}
+.ticket-total{
+    font-size:22px;
+    font-weight:900;
+    color:var(--acc);
+    white-space:nowrap;
+}
+.info-grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:6px;
+    margin-top:10px;
+}
+.info-line{
+    border:1px solid #252b50;
+    background:#11152c;
+    border-radius:12px;
+    padding:8px;
+    font-size:13px;
+}
+.info-line b{
+    color:#dbe2ff;
+}
+.btnrow{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:10px;
+}
+.btnrow button{
+    padding:9px 11px;
+    font-size:13px;
+}
+details{
+    margin-top:10px;
+}
+summary{
+    cursor:pointer;
+    color:var(--acc);
+    font-weight:800;
+    margin:8px 0;
+}
 #lockScreen,
 #apiSetupScreen{
     position:fixed;
@@ -259,11 +336,55 @@ label{
     width:100%;
     text-align:center;
 }
-
+.modal{
+    position:fixed;
+    inset:0;
+    background:#000c;
+    z-index:999999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+}
+.modal-box{
+    max-width:900px;
+    width:100%;
+    max-height:92vh;
+    overflow:auto;
+    background:#101026;
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:14px;
+}
+.modal-img{
+    width:100%;
+    max-height:75vh;
+    object-fit:contain;
+    border-radius:16px;
+    background:#000;
+}
+.edit-banner{
+    background:#4a3410;
+    border:1px solid #86611c;
+    color:#ffd166;
+    border-radius:16px;
+    padding:10px;
+    margin:8px 0;
+    font-weight:800;
+}
+.small-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+}
+textarea.field{
+    min-height:92px;
+}
 @media(min-width:780px){
     .grid{grid-template-columns:repeat(4,1fr)}
     .row{grid-template-columns:repeat(4,1fr)}
     .row3{grid-template-columns:repeat(3,1fr)}
+    .info-grid{grid-template-columns:repeat(3,1fr)}
     .tabs{
         left:50%;
         transform:translateX(-50%);
@@ -271,6 +392,7 @@ label{
         border-radius:24px 24px 0 0;
     }
     .wrap{padding-bottom:110px}
+    .small-actions{grid-template-columns:repeat(4,1fr)}
 }
 </style>
 </head>
@@ -331,21 +453,35 @@ label{
     </div>
 </div>
 
+<div id="photoModal" class="modal hide">
+    <div class="modal-box">
+        <div class="section-title">
+            <h3 style="margin:0">Foto del ticket</h3>
+            <button class="bad" onclick="window.closePhotoModal()">Cerrar</button>
+        </div>
+        <img id="modalImg" class="modal-img">
+    </div>
+</div>
+
 <main id="appContent" class="wrap hide">
     <div class="top">
         <div>
             <h2 style="margin:0;font-size:20px">FacturaIA</h2>
             <div class="mut" style="font-size:12px">Control Local Inteligente</div>
         </div>
-        <button class="bad" style="padding:6px 10px;font-size:12px" onclick="window.resetAll()">
-            Borrar todo
+        <button class="ghost" style="padding:6px 10px;font-size:12px" onclick="window.tab(3)">
+            Perfil
         </button>
     </div>
 
     <section id="p0">
+        <div id="editBanner" class="edit-banner hide">
+            Modo edición activo. Estás modificando un ticket existente.
+        </div>
+
         <div class="card">
             <div class="section-title">
-                <h3>Nuevo ticket</h3>
+                <h3 id="formTitle">Nuevo ticket</h3>
                 <button id="btnOCR" class="warn" onclick="window.analyzeImageWithIA()">
                     Reanalizar con IA
                 </button>
@@ -385,11 +521,11 @@ label{
 
             <div class="row">
                 <div>
-                    <label>Folio/Check</label>
+                    <label>Folio / Check</label>
                     <input id="folio" class="field">
                 </div>
                 <div>
-                    <label>Referencia/Código</label>
+                    <label>Referencia / Código</label>
                     <input id="ref" class="field">
                 </div>
                 <div>
@@ -426,24 +562,52 @@ label{
                 </div>
             </div>
 
+            <div class="row">
+                <div>
+                    <label>WhatsApp Emisor</label>
+                    <input id="issuerWhatsapp" class="field" placeholder="Ej. 5213410000000">
+                </div>
+                <div>
+                    <label>Categoría</label>
+                    <input id="category" class="field" placeholder="Comida, Gasolina, Hotel...">
+                </div>
+                <div>
+                    <label>Forma de pago detectada</label>
+                    <input id="payDetected" class="field" placeholder="Tarjeta, efectivo...">
+                </div>
+                <div>
+                    <label>Estatus</label>
+                    <select id="status" class="field">
+                        <option>Pendiente</option>
+                        <option>Solicitada</option>
+                        <option>Facturada</option>
+                        <option>No facturable</option>
+                    </select>
+                </div>
+            </div>
+
+            <label>Notas / Texto interpretado por IA</label>
             <textarea id="data" class="field" rows="4" placeholder="Texto interpretado por la IA..."></textarea>
 
             <div class="row">
-                <select id="status" class="field">
-                    <option>Pendiente</option>
-                    <option>Solicitada</option>
-                    <option>Facturada</option>
-                </select>
-                <button onclick="window.saveTicket()">Guardar local</button>
-                <button class="ghost" onclick="window.completeDefaults()">Llenar campos</button>
-                <button class="warn" onclick="window.invoiceNow()">Facturar ya</button>
+                <button id="btnSaveTicket" onclick="window.saveTicket()">Guardar local</button>
+                <button class="ghost" onclick="window.completeDefaults()">Llenar vencimiento</button>
+                <button class="ghost" onclick="window.clearTicketForm()">Limpiar formulario</button>
+                <button class="bad hide" id="btnCancelEdit" onclick="window.cancelEdit()">Cancelar edición</button>
             </div>
 
-            <div class="row">
-                <button class="ghost" onclick="window.shareTicket()">Compartir ticket</button>
-                <button class="ghost" onclick="window.copyMessageCurrent()">Copiar texto fiscal</button>
-                <button class="ghost" onclick="window.changeApiKey()">Cambiar API Key</button>
-                <button class="ghost" onclick="window.lockApp()">Bloquear app</button>
+            <div class="small-actions">
+                <button class="warn" onclick="window.invoiceNow()">Facturar web</button>
+                <button class="ghost" onclick="window.emailCurrentTicket()">Enviar email</button>
+                <button class="ghost" onclick="window.whatsappCurrentTicket()">WhatsApp</button>
+                <button class="ghost" onclick="window.copyMessageCurrent()">Copiar texto</button>
+            </div>
+
+            <div class="small-actions" style="margin-top:8px">
+                <button class="ghost" onclick="window.shareTicket()">Compartir</button>
+                <button class="ghost" onclick="window.copyFiscalProfile()">Copiar datos fiscales</button>
+                <button class="ghost" onclick="window.detectPossibleDuplicate()">Buscar duplicado</button>
+                <button class="okbtn" onclick="window.markCurrentAsSolicitada()">Marcar solicitada</button>
             </div>
         </div>
 
@@ -452,13 +616,55 @@ label{
 
     <section id="p1" class="hide">
         <div class="card">
-            <h3>Historial de compras</h3>
-            <input id="q" class="field" placeholder="Buscar comercio o RFC..." oninput="window.render()">
+            <div class="section-title">
+                <h3>Historial de tickets</h3>
+                <button class="ghost" onclick="window.render()">Actualizar</button>
+            </div>
+
+            <input id="q" class="field" placeholder="Buscar comercio, RFC, folio, referencia..." oninput="window.render()">
 
             <div class="row">
-                <button onclick="window.exportJSON()">Exportar respaldo</button>
-                <button class="ghost" onclick="document.getElementById('imp').click()">Importar</button>
+                <div>
+                    <label>Filtrar estatus</label>
+                    <select id="filterStatus" class="field" onchange="window.render()">
+                        <option value="">Todos</option>
+                        <option>Pendiente</option>
+                        <option>Solicitada</option>
+                        <option>Facturada</option>
+                        <option>No facturable</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Ordenar por</label>
+                    <select id="sortBy" class="field" onchange="window.render()">
+                        <option value="due">Vencimiento</option>
+                        <option value="date">Fecha ticket</option>
+                        <option value="createdAt">Fecha captura</option>
+                        <option value="total">Total</option>
+                        <option value="store">Comercio</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Vista</label>
+                    <select id="viewMode" class="field" onchange="window.render()">
+                        <option value="full">Completa</option>
+                        <option value="compact">Compacta</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Solo con alerta</label>
+                    <select id="onlyAlerts" class="field" onchange="window.render()">
+                        <option value="">No</option>
+                        <option value="yes">Sí</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="btnrow">
                 <button onclick="window.exportCSV()">Exportar CSV Excel</button>
+                <button class="ghost" onclick="window.exportJSON()">Exportar respaldo completo</button>
+                <button class="ghost" onclick="document.getElementById('imp').click()">Importar respaldo</button>
+                <button class="warn" onclick="window.exportPendingCSV()">Exportar pendientes</button>
             </div>
 
             <input id="imp" type="file" accept="application/json" class="hide" onchange="window.importJSON(event)">
@@ -469,7 +675,13 @@ label{
 
     <section id="p2" class="hide">
         <div class="card">
-            <h3>Próximos a vencer 30 días</h3>
+            <div class="section-title">
+                <h3>Alertas inteligentes</h3>
+                <button class="ghost" onclick="window.render()">Actualizar</button>
+            </div>
+            <p class="mini">
+                Aquí aparecen tickets vencidos, próximos a vencer y posibles duplicados.
+            </p>
             <div id="alerts"></div>
         </div>
     </section>
@@ -525,6 +737,34 @@ label{
                     <input id="pfPay" class="field">
                 </div>
             </div>
+
+            <div class="btnrow">
+                <button class="ghost" onclick="window.copyFiscalProfile()">Copiar datos fiscales</button>
+                <button class="ghost" onclick="window.fillDemoProfile()">Llenar ejemplo</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Configuración de la app</h3>
+            <p class="mini">
+                La API Key se guarda solo en este dispositivo. No se sube a GitHub.
+            </p>
+
+            <div class="btnrow">
+                <button class="ghost" onclick="window.changeApiKey()">Cambiar API Key</button>
+                <button class="ghost" onclick="window.testApiKey()">Probar API Key</button>
+                <button class="warn" onclick="window.lockApp()">Cerrar sesión</button>
+                <button class="bad" onclick="window.resetAll()">Borrar todo</button>
+            </div>
+
+            <p class="mini">
+                Cerrar sesión solo vuelve a pedir la contraseña. No borra tickets ni API Key.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>Resumen de datos</h3>
+            <div id="profileStats" class="grid"></div>
         </div>
 
         <div class="card">
@@ -707,6 +947,7 @@ import { GoogleGenAI } from "@google/genai";
 window.items = {};
 window.photo = "";
 window.sourceCanvas = null;
+window.editingTicketId = null;
 
 window.profile = {
     name:"",
@@ -722,6 +963,15 @@ window.profile = {
 
 window.el = function(id){
     return document.getElementById(id);
+};
+
+window.escapeHtml = function(value){
+    return String(value ?? "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
 };
 
 window.setVal = function(id,v){
@@ -740,6 +990,10 @@ window.today = function(){
     return new Date().toISOString().slice(0,10);
 };
 
+window.nowText = function(){
+    return new Date().toISOString();
+};
+
 window.addDays = function(ds,n){
     var d = new Date(ds || window.today());
     d.setDate(d.getDate() + n);
@@ -748,6 +1002,20 @@ window.addDays = function(ds,n){
 
 window.gid = function(){
     return Date.now() + "_" + Math.random().toString(36).slice(2,8);
+};
+
+window.money = function(n){
+    return "$" + Number(n || 0).toLocaleString("es-MX", {
+        minimumFractionDigits:2,
+        maximumFractionDigits:2
+    });
+};
+
+window.daysBetween = function(ds){
+    if(!ds) return null;
+    var today = new Date(window.today());
+    var due = new Date(ds);
+    return Math.ceil((due - today) / (1000 * 60 * 60 * 24));
 };
 
 window.log = function(t){
@@ -793,7 +1061,7 @@ window.loadPhoto = function(ev){
 
         im.onload = function(){
             var c = document.createElement("canvas");
-            var maxWidth = 1200;
+            var maxWidth = 1400;
             var scale = Math.min(1, maxWidth / im.width);
 
             c.width = Math.round(im.width * scale);
@@ -802,7 +1070,7 @@ window.loadPhoto = function(ev){
             c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
 
             window.sourceCanvas = c;
-            window.photo = c.toDataURL("image/jpeg", 0.80);
+            window.photo = c.toDataURL("image/jpeg", 0.82);
 
             window.el("preview").src = window.photo;
             window.el("preview").classList.remove("hide");
@@ -878,9 +1146,11 @@ Devuelve SOLO JSON válido, sin markdown, sin explicación y sin texto adicional
 Reglas:
 - Si no encuentras algún dato, usa "".
 - La fecha debe venir en formato YYYY-MM-DD.
-- El total debe ser número, no texto.
-- Si ves una URL de facturación o código QR relacionado con facturación, intenta extraer la URL.
+- El total y subtotal deben ser números.
+- Si ves URL de facturación o una URL asociada al QR, extrae la URL.
 - Si el ticket tiene folio, check, referencia o código de facturación, extrae el dato más útil.
+- Si detectas categoría probable, usa una de estas: Comida, Gasolina, Hotel, Supermercado, Transporte, Farmacia, Otro.
+- Si detectas forma de pago, inclúyela.
 - No inventes información.
 
 Estructura exacta:
@@ -889,11 +1159,15 @@ Estructura exacta:
   "date": "YYYY-MM-DD",
   "total": 0.00,
   "subtotal": 0.00,
+  "service": 0.00,
   "folio": "Folio o ticket",
   "ref": "Código de facturación o referencia",
   "url": "Sitio web para facturar",
   "email": "correo facturación",
-  "rfc": "RFC Emisor"
+  "whatsapp": "whatsapp facturación",
+  "rfc": "RFC Emisor",
+  "category": "Categoría probable",
+  "payDetected": "Forma de pago detectada"
 }
 `;
 
@@ -933,6 +1207,30 @@ Estructura exacta:
     window.validateFields();
 };
 
+window.testApiKey = async function(){
+    var REAL_API_KEY = window.getApiKey();
+
+    if(!REAL_API_KEY){
+        alert("No hay API Key guardada.");
+        return;
+    }
+
+    try{
+        const ai = new GoogleGenAI({
+            apiKey: REAL_API_KEY
+        });
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: "Responde solamente: OK"
+        });
+
+        alert("API Key funcionando: " + String(response.text || "").trim());
+    }catch(e){
+        alert("Error probando API Key: " + e.message);
+    }
+};
+
 window.applyExtracted = function(x){
     if(!x) return;
 
@@ -951,6 +1249,10 @@ window.applyExtracted = function(x){
         window.setVal("subtotal", x.subtotal);
     }
 
+    if(x.service !== undefined && x.service !== null && x.service !== ""){
+        window.setVal("service", x.service);
+    }
+
     if(x.folio) window.setVal("folio", x.folio);
     if(x.ref) window.setVal("ref", x.ref);
 
@@ -964,7 +1266,14 @@ window.applyExtracted = function(x){
         window.el("method").value = "Email";
     }
 
+    if(x.whatsapp){
+        window.setVal("issuerWhatsapp", x.whatsapp);
+        window.el("method").value = "WhatsApp";
+    }
+
     if(x.rfc) window.setVal("issuerRfc", x.rfc);
+    if(x.category) window.setVal("category", x.category);
+    if(x.payDetected) window.setVal("payDetected", x.payDetected);
 
     window.el("data").value =
         "--- DETECCIONES IA ---\n" +
@@ -974,6 +1283,12 @@ window.applyExtracted = function(x){
         "Folio: " + (x.folio || "?") + "\n" +
         "Referencia: " + (x.ref || "?") + "\n" +
         "URL: " + (x.url || "?") + "\n" +
+        "Email: " + (x.email || "?") + "\n" +
+        "WhatsApp: " + (x.whatsapp || "?") + "\n" +
+        "Categoría: " + (x.category || "?") + "\n" +
+        "Forma de pago: " + (x.payDetected || "?") + "\n" +
+        "Subtotal: $" + (x.subtotal || "?") + "\n" +
+        "Servicio: $" + (x.service || "?") + "\n" +
         "Total: $" + (x.total || "?");
 };
 
@@ -984,8 +1299,18 @@ window.arr = function(){
         a.push(window.items[k]);
     }
 
+    var sortBy = window.el("sortBy") ? window.el("sortBy").value : "due";
+
     a.sort(function(x,y){
-        return String(x.due || "").localeCompare(String(y.due || ""));
+        if(sortBy === "total"){
+            return Number(y.total || 0) - Number(x.total || 0);
+        }
+
+        if(sortBy === "store"){
+            return String(x.store || "").localeCompare(String(y.store || ""));
+        }
+
+        return String(x[sortBy] || "").localeCompare(String(y[sortBy] || ""));
     });
 
     return a;
@@ -1012,7 +1337,7 @@ window.loadAll = function(){
 };
 
 window.resetAll = function(){
-    if(confirm("¿Borrar datos de la app en este dispositivo? Esto también borrará la API Key guardada.")){
+    if(confirm("¿Borrar todos los datos de la app en este dispositivo? Esto también borrará la API Key guardada.")){
         window.items = {};
         localStorage.removeItem("fac_ia_items");
         localStorage.removeItem("fac_ia_profile");
@@ -1054,6 +1379,42 @@ window.saveProfile = function(){
     window.formToProfile();
     window.saveAll();
     alert("Perfil Fiscal guardado.");
+    window.render();
+};
+
+window.fillDemoProfile = function(){
+    if(!confirm("Esto llenará datos de ejemplo. ¿Continuar?")) return;
+
+    window.setVal("pfName", "NOMBRE O RAZÓN SOCIAL");
+    window.setVal("pfRfc", "RFC000000XXX");
+    window.setVal("pfRegimen", "Régimen fiscal");
+    window.setVal("pfAddress", "Domicilio fiscal");
+    window.setVal("pfColony", "Colonia, C.P.");
+    window.setVal("pfCity", "Ciudad, Estado");
+    window.setVal("pfCfdi", "Gastos en general");
+    window.setVal("pfEmail", "correo@ejemplo.com");
+    window.setVal("pfPay", "Tarjeta de crédito");
+};
+
+window.copyFiscalProfile = function(){
+    window.formToProfile();
+
+    var p = window.profile;
+
+    var txt =
+        "Datos fiscales:\n" +
+        "Razón social: " + p.name + "\n" +
+        "RFC: " + p.rfc + "\n" +
+        "Régimen fiscal: " + p.regimen + "\n" +
+        "Domicilio: " + p.address + "\n" +
+        "Colonia y C.P.: " + p.colony + "\n" +
+        "Ciudad y Estado: " + p.city + "\n" +
+        "Uso de CFDI: " + p.cfdi + "\n" +
+        "Correo: " + p.email + "\n" +
+        "Forma de pago: " + p.pay;
+
+    navigator.clipboard.writeText(txt);
+    alert("Datos fiscales copiados.");
 };
 
 window.missingInfo = function(){
@@ -1095,6 +1456,12 @@ window.validateFields = function(){
         h = '<span class="chip ok">Listo para guardar</span>';
     }
 
+    var dup = window.findDuplicateForCurrent();
+
+    if(dup){
+        h += '<span class="chip orangechip">Posible duplicado</span>';
+    }
+
     if(window.el("validationChips")){
         window.el("validationChips").innerHTML = h;
     }
@@ -1105,8 +1472,11 @@ window.validateFields = function(){
 window.currentTicketObj = function(){
     window.formToProfile();
 
+    var now = window.nowText();
+    var existing = window.editingTicketId ? window.items[window.editingTicketId] : null;
+
     return {
-        id:window.gid(),
+        id: existing ? existing.id : window.gid(),
         store:window.el("store").value,
         date:window.el("date").value,
         due:window.el("due").value,
@@ -1115,21 +1485,63 @@ window.currentTicketObj = function(){
         service:parseFloat(window.el("service").value) || 0,
         issuerRfc:window.el("issuerRfc").value,
         issuerEmail:window.el("issuerEmail").value,
+        issuerWhatsapp:window.el("issuerWhatsapp").value,
         folio:window.el("folio").value,
         ref:window.el("ref").value,
         invoiceUrl:window.el("invoiceUrl").value,
+        category:window.el("category").value,
+        payDetected:window.el("payDetected").value,
         data:window.el("data").value,
         method:window.el("method").value,
         status:window.el("status").value,
         photo:window.photo,
-        profile:window.profile
+        profile:window.profile,
+        createdAt: existing ? existing.createdAt : now,
+        updatedAt: now
     };
+};
+
+window.saveTicket = function(){
+    var m = window.validateFields();
+
+    if(m.length){
+        alert("Faltan datos básicos: " + m.join(", "));
+        return;
+    }
+
+    var dup = window.findDuplicateForCurrent();
+
+    if(dup && !window.editingTicketId){
+        var proceed = confirm("Parece que ya existe un ticket parecido para el mismo comercio, fecha y total. ¿Guardar de todas formas?");
+        if(!proceed) return;
+    }
+
+    var t = window.currentTicketObj();
+    window.items[t.id] = t;
+
+    window.saveAll();
+    window.render();
+
+    if(window.editingTicketId){
+        alert("Ticket actualizado.");
+    }else{
+        alert("Guardado en historial.");
+    }
+
+    window.clearTicketForm();
+    window.tab(1);
+};
+
+window.markCurrentAsSolicitada = function(){
+    window.el("status").value = "Solicitada";
+    alert("Estatus cambiado a Solicitada. Recuerda guardar el ticket.");
 };
 
 window.clearTicketForm = function(){
     var ids = [
         "store","date","total","due","folio","ref","invoiceUrl",
-        "subtotal","service","issuerRfc","issuerEmail","data"
+        "subtotal","service","issuerRfc","issuerEmail","issuerWhatsapp",
+        "category","payDetected","data"
     ];
 
     ids.forEach(function(id){
@@ -1143,6 +1555,7 @@ window.clearTicketForm = function(){
 
     window.photo = "";
     window.sourceCanvas = null;
+    window.editingTicketId = null;
 
     if(window.el("preview")){
         window.el("preview").src = "";
@@ -1159,73 +1572,64 @@ window.clearTicketForm = function(){
         window.el("ocrBar").style.width = "0%";
     }
 
+    window.el("formTitle").textContent = "Nuevo ticket";
+    window.el("btnSaveTicket").textContent = "Guardar local";
+    window.hide("editBanner");
+    window.hide("btnCancelEdit");
+
     window.validateFields();
 };
 
-window.saveTicket = function(){
-    var m = window.validateFields();
-
-    if(m.length){
-        alert("Faltan datos básicos: " + m.join(", "));
-        return;
-    }
-
-    var t = window.currentTicketObj();
-    window.items[t.id] = t;
-
-    window.saveAll();
-    window.render();
-
-    alert("Guardado en historial.");
-
+window.cancelEdit = function(){
     window.clearTicketForm();
 };
 
-window.buildMessage = function(t){
-    var p = t.profile || window.profile;
+window.editTicket = function(id){
+    var t = window.items[id];
 
-    return "Solicitud de factura:\n\n" +
-        "Establecimiento: " + t.store + "\n" +
-        "Fecha: " + t.date + "\n" +
-        "Total: $" + t.total + "\n" +
-        "Folio: " + (t.folio || "N/A") + "\n\n" +
-        "Datos Fiscales:\n" +
-        "RFC: " + p.rfc + "\n" +
-        "Razón Social: " + p.name + "\n" +
-        "CP: " + p.colony + "\n" +
-        "Uso CFDI: " + p.cfdi + "\n" +
-        "Forma de pago: " + p.pay;
-};
-
-window.invoiceNow = function(){
-    var t = window.currentTicketObj();
-
-    if(t.invoiceUrl){
-        window.open(t.invoiceUrl, "_blank");
-    }else if(t.issuerEmail){
-        window.location.href =
-            "mailto:" + encodeURIComponent(t.issuerEmail) +
-            "?subject=Facturacion&body=" +
-            encodeURIComponent(window.buildMessage(t));
-    }else{
-        alert("No hay URL ni email. Usa Copiar texto fiscal.");
+    if(!t){
+        alert("No se encontró el ticket.");
+        return;
     }
-};
 
-window.copyMessageCurrent = function(){
-    navigator.clipboard.writeText(window.buildMessage(window.currentTicketObj()));
-    alert("Copiado.");
-};
+    window.editingTicketId = id;
 
-window.shareTicket = function(){
-    if(navigator.share){
-        navigator.share({
-            title:"Ticket",
-            text:window.buildMessage(window.currentTicketObj())
-        });
+    window.setVal("store", t.store);
+    window.setVal("date", t.date);
+    window.setVal("due", t.due);
+    window.setVal("total", t.total);
+    window.setVal("subtotal", t.subtotal);
+    window.setVal("service", t.service);
+    window.setVal("issuerRfc", t.issuerRfc);
+    window.setVal("issuerEmail", t.issuerEmail);
+    window.setVal("issuerWhatsapp", t.issuerWhatsapp);
+    window.setVal("folio", t.folio);
+    window.setVal("ref", t.ref);
+    window.setVal("invoiceUrl", t.invoiceUrl);
+    window.setVal("category", t.category);
+    window.setVal("payDetected", t.payDetected);
+    window.setVal("data", t.data);
+    window.setVal("method", t.method || "Web");
+    window.setVal("status", t.status || "Pendiente");
+
+    window.photo = t.photo || "";
+    window.sourceCanvas = null;
+
+    if(window.photo){
+        window.el("preview").src = window.photo;
+        window.el("preview").classList.remove("hide");
     }else{
-        window.copyMessageCurrent();
+        window.el("preview").classList.add("hide");
     }
+
+    window.el("formTitle").textContent = "Editar ticket";
+    window.el("btnSaveTicket").textContent = "Actualizar ticket";
+    window.show("editBanner");
+    window.show("btnCancelEdit");
+
+    window.validateFields();
+    window.tab(0);
+    window.scrollTo({top:0, behavior:"smooth"});
 };
 
 window.completeDefaults = function(){
@@ -1233,101 +1637,686 @@ window.completeDefaults = function(){
     window.validateFields();
 };
 
+window.buildMessage = function(t){
+    var p = t.profile || window.profile;
+
+    return "Solicitud de factura:\n\n" +
+        "Establecimiento: " + (t.store || "") + "\n" +
+        "Fecha del ticket: " + (t.date || "") + "\n" +
+        "Total: " + window.money(t.total) + "\n" +
+        "Subtotal: " + window.money(t.subtotal) + "\n" +
+        "Propina/Servicio: " + window.money(t.service) + "\n" +
+        "Folio: " + (t.folio || "N/A") + "\n" +
+        "Referencia/Código: " + (t.ref || "N/A") + "\n\n" +
+        "Datos fiscales:\n" +
+        "Razón Social: " + (p.name || "") + "\n" +
+        "RFC: " + (p.rfc || "") + "\n" +
+        "Régimen fiscal: " + (p.regimen || "") + "\n" +
+        "Domicilio: " + (p.address || "") + "\n" +
+        "Colonia y C.P.: " + (p.colony || "") + "\n" +
+        "Ciudad y Estado: " + (p.city || "") + "\n" +
+        "Uso CFDI: " + (p.cfdi || "") + "\n" +
+        "Correo: " + (p.email || "") + "\n" +
+        "Forma de pago: " + (p.pay || "");
+};
+
+window.invoiceNow = function(){
+    var t = window.currentTicketObj();
+
+    if(t.invoiceUrl){
+        window.open(t.invoiceUrl, "_blank");
+    }else{
+        alert("No hay URL para facturar.");
+    }
+};
+
+window.emailCurrentTicket = function(){
+    var t = window.currentTicketObj();
+    window.emailTicketObj(t);
+};
+
+window.emailTicketObj = function(t){
+    var email = t.issuerEmail || "";
+
+    if(!email){
+        email = prompt("No hay email guardado. Escribe el correo de facturación:");
+    }
+
+    if(!email) return;
+
+    window.location.href =
+        "mailto:" + encodeURIComponent(email) +
+        "?subject=" + encodeURIComponent("Solicitud de factura " + (t.store || "")) +
+        "&body=" + encodeURIComponent(window.buildMessage(t));
+};
+
+window.whatsappCurrentTicket = function(){
+    var t = window.currentTicketObj();
+    window.whatsappTicketObj(t);
+};
+
+window.whatsappTicketObj = function(t){
+    var phone = String(t.issuerWhatsapp || "").replace(/\D/g,"");
+    var txt = encodeURIComponent(window.buildMessage(t));
+
+    if(phone){
+        window.open("https://wa.me/" + phone + "?text=" + txt, "_blank");
+    }else{
+        window.open("https://wa.me/?text=" + txt, "_blank");
+    }
+};
+
+window.copyMessageCurrent = function(){
+    navigator.clipboard.writeText(window.buildMessage(window.currentTicketObj()));
+    alert("Texto fiscal copiado.");
+};
+
+window.copyTicketMessage = function(id){
+    var t = window.items[id];
+
+    if(!t) return;
+
+    navigator.clipboard.writeText(window.buildMessage(t));
+    alert("Texto fiscal copiado.");
+};
+
+window.shareTicket = function(){
+    var t = window.currentTicketObj();
+
+    if(navigator.share){
+        navigator.share({
+            title:"Ticket",
+            text:window.buildMessage(t)
+        });
+    }else{
+        window.copyMessageCurrent();
+    }
+};
+
+window.shareTicketObj = function(id){
+    var t = window.items[id];
+
+    if(!t) return;
+
+    if(navigator.share){
+        navigator.share({
+            title:"Ticket",
+            text:window.buildMessage(t)
+        });
+    }else{
+        navigator.clipboard.writeText(window.buildMessage(t));
+        alert("Texto fiscal copiado.");
+    }
+};
+
+window.findDuplicateForCurrent = function(){
+    var store = String(window.el("store").value || "").trim().toLowerCase();
+    var date = String(window.el("date").value || "").trim();
+    var total = Number(window.el("total").value || 0).toFixed(2);
+
+    if(!store || !date || Number(total) === 0){
+        return null;
+    }
+
+    var all = Object.values(window.items);
+
+    for(var i=0;i<all.length;i++){
+        var x = all[i];
+
+        if(window.editingTicketId && x.id === window.editingTicketId){
+            continue;
+        }
+
+        var sameStore = String(x.store || "").trim().toLowerCase() === store;
+        var sameDate = String(x.date || "").trim() === date;
+        var sameTotal = Number(x.total || 0).toFixed(2) === total;
+
+        if(sameStore && sameDate && sameTotal){
+            return x;
+        }
+    }
+
+    return null;
+};
+
+window.detectPossibleDuplicate = function(){
+    var dup = window.findDuplicateForCurrent();
+
+    if(dup){
+        alert("Posible duplicado encontrado:\n" + dup.store + "\nFecha: " + dup.date + "\nTotal: " + window.money(dup.total));
+    }else{
+        alert("No encontré duplicados con la misma tienda, fecha y total.");
+    }
+};
+
+window.getTicketStatusChips = function(x){
+    var chips = "";
+    var diff = window.daysBetween(x.due);
+
+    if(x.status === "Facturada"){
+        chips += '<span class="chip ok">Facturada</span>';
+    }else if(x.status === "Solicitada"){
+        chips += '<span class="chip orangechip">Solicitada</span>';
+    }else if(x.status === "No facturable"){
+        chips += '<span class="chip">No facturable</span>';
+    }else{
+        chips += '<span class="chip warn">Pendiente</span>';
+    }
+
+    if(diff !== null && x.status !== "Facturada" && x.status !== "No facturable"){
+        if(diff < 0){
+            chips += '<span class="chip badchip">Vencida</span>';
+        }else if(diff <= 7){
+            chips += '<span class="chip badchip">Vence en ' + diff + ' días</span>';
+        }else if(diff <= 30){
+            chips += '<span class="chip orangechip">Vence en ' + diff + ' días</span>';
+        }
+    }
+
+    if(x.photo){
+        chips += '<span class="chip ok">Con foto</span>';
+    }else{
+        chips += '<span class="chip">Sin foto</span>';
+    }
+
+    if(x.invoiceUrl){
+        chips += '<span class="chip ok">Con URL</span>';
+    }
+
+    return chips;
+};
+
 window.render = function(){
     var a = window.arr();
     var pend = a.filter(function(x){
-        return x.status !== "Facturada";
+        return x.status !== "Facturada" && x.status !== "No facturable";
+    });
+    var fact = a.filter(function(x){
+        return x.status === "Facturada";
+    });
+    var solicitadas = a.filter(function(x){
+        return x.status === "Solicitada";
+    });
+    var vencidas = pend.filter(function(x){
+        var d = window.daysBetween(x.due);
+        return d !== null && d < 0;
+    });
+    var pronto = pend.filter(function(x){
+        var d = window.daysBetween(x.due);
+        return d !== null && d >= 0 && d <= 7;
     });
 
     if(window.el("kpis")){
         window.el("kpis").innerHTML =
             '<div class="kpi"><span>Pendientes</span><b>' + pend.length + '</b></div>' +
-            '<div class="kpi"><span>Total registros</span><b>' + a.length + '</b></div>';
+            '<div class="kpi"><span>Solicitadas</span><b>' + solicitadas.length + '</b></div>' +
+            '<div class="kpi"><span>Facturadas</span><b>' + fact.length + '</b></div>' +
+            '<div class="kpi"><span>Vencidas</span><b>' + vencidas.length + '</b></div>' +
+            '<div class="kpi"><span>Vencen 7 días</span><b>' + pronto.length + '</b></div>' +
+            '<div class="kpi"><span>Total tickets</span><b>' + a.length + '</b></div>' +
+            '<div class="kpi"><span>Monto pendiente</span><b>' + window.money(pend.reduce((s,x)=>s+Number(x.total||0),0)) + '</b></div>' +
+            '<div class="kpi"><span>Monto total</span><b>' + window.money(a.reduce((s,x)=>s+Number(x.total||0),0)) + '</b></div>';
     }
 
+    window.renderProfileStats(a, pend, fact);
+    window.renderList(a);
+    window.renderAlerts(a);
+};
+
+window.renderProfileStats = function(a, pend, fact){
+    if(!window.el("profileStats")) return;
+
+    var conFoto = a.filter(x => !!x.photo).length;
+    var conUrl = a.filter(x => !!x.invoiceUrl).length;
+
+    window.el("profileStats").innerHTML =
+        '<div class="kpi"><span>Tickets guardados</span><b>' + a.length + '</b></div>' +
+        '<div class="kpi"><span>Pendientes</span><b>' + pend.length + '</b></div>' +
+        '<div class="kpi"><span>Facturadas</span><b>' + fact.length + '</b></div>' +
+        '<div class="kpi"><span>Con foto</span><b>' + conFoto + '</b></div>' +
+        '<div class="kpi"><span>Con URL</span><b>' + conUrl + '</b></div>' +
+        '<div class="kpi"><span>API Key</span><b>' + (window.hasApiKey() ? "OK" : "No") + '</b></div>';
+};
+
+window.renderList = function(a){
     var box = window.el("list");
 
-    if(box){
-        box.innerHTML = "";
+    if(!box) return;
 
-        var qEl = window.el("q");
-        var q = qEl ? qEl.value.toLowerCase() : "";
+    box.innerHTML = "";
 
-        a.filter(function(x){
-            var store = String(x.store || "").toLowerCase();
-            var rfc = String(x.issuerRfc || "").toLowerCase();
-            return store.includes(q) || rfc.includes(q);
-        }).forEach(function(x){
-            var d = document.createElement("div");
-            d.className = "item";
+    var qEl = window.el("q");
+    var q = qEl ? qEl.value.toLowerCase() : "";
+    var statusFilter = window.el("filterStatus") ? window.el("filterStatus").value : "";
+    var viewMode = window.el("viewMode") ? window.el("viewMode").value : "full";
+    var onlyAlerts = window.el("onlyAlerts") ? window.el("onlyAlerts").value : "";
 
-            d.innerHTML =
-                "<h3>" + (x.store || "Sin tienda") + " [" + (x.status || "Pendiente") + "]</h3>" +
-                '<p class="mut">' + (x.date || "") + "</p>" +
-                "<p><b>$" + Number(x.total || 0).toFixed(2) + "</b></p>" +
-                '<p class="mini">Vence: ' + (x.due || "Sin fecha") + "</p>";
+    var filtered = a.filter(function(x){
+        var hay = [
+            x.store,
+            x.issuerRfc,
+            x.folio,
+            x.ref,
+            x.invoiceUrl,
+            x.issuerEmail,
+            x.category
+        ].join(" ").toLowerCase();
 
-            var b = document.createElement("button");
-            b.textContent = "✓ Facturada";
-            b.onclick = function(){
-                window.items[x.id].status = "Facturada";
-                window.saveAll();
-                window.render();
-            };
+        var matchesText = hay.includes(q);
+        var matchesStatus = !statusFilter || x.status === statusFilter;
 
-            var b2 = document.createElement("button");
-            b2.textContent = "Eliminar";
-            b2.className = "bad";
-            b2.style.marginLeft = "8px";
-            b2.onclick = function(){
-                if(confirm("¿Eliminar?")){
-                    delete window.items[x.id];
-                    window.saveAll();
-                    window.render();
-                }
-            };
+        var diff = window.daysBetween(x.due);
+        var hasAlert = x.status !== "Facturada" && x.status !== "No facturable" && diff !== null && diff <= 7;
 
-            d.appendChild(b);
-            d.appendChild(b2);
-            box.appendChild(d);
+        var matchesAlert = !onlyAlerts || hasAlert;
+
+        return matchesText && matchesStatus && matchesAlert;
+    });
+
+    if(!filtered.length){
+        box.innerHTML = '<div class="card"><p class="mini">No hay tickets con esos filtros.</p></div>';
+        return;
+    }
+
+    filtered.forEach(function(x){
+        var d = document.createElement("div");
+        d.className = "item";
+
+        var fullInfo = "";
+
+        if(viewMode === "full"){
+            fullInfo =
+                '<div class="info-grid">' +
+                    window.infoLine("Fecha ticket", x.date) +
+                    window.infoLine("Vence factura", x.due) +
+                    window.infoLine("Días restantes", window.daysBetween(x.due)) +
+                    window.infoLine("Subtotal", window.money(x.subtotal)) +
+                    window.infoLine("Servicio / Propina", window.money(x.service)) +
+                    window.infoLine("Total", window.money(x.total)) +
+                    window.infoLine("Folio", x.folio) +
+                    window.infoLine("Referencia / Código", x.ref) +
+                    window.infoLine("RFC emisor", x.issuerRfc) +
+                    window.infoLine("Email emisor", x.issuerEmail) +
+                    window.infoLine("WhatsApp emisor", x.issuerWhatsapp) +
+                    window.infoLine("Método", x.method) +
+                    window.infoLine("Categoría", x.category) +
+                    window.infoLine("Pago detectado", x.payDetected) +
+                    window.infoLine("Fecha captura", x.createdAt) +
+                    window.infoLine("Última modificación", x.updatedAt) +
+                '</div>' +
+                '<details>' +
+                    '<summary>Ver información fiscal y notas</summary>' +
+                    '<div class="info-grid">' +
+                        window.infoLine("Mi razón social", x.profile && x.profile.name) +
+                        window.infoLine("Mi RFC", x.profile && x.profile.rfc) +
+                        window.infoLine("Régimen", x.profile && x.profile.regimen) +
+                        window.infoLine("Domicilio", x.profile && x.profile.address) +
+                        window.infoLine("Colonia y C.P.", x.profile && x.profile.colony) +
+                        window.infoLine("Ciudad y Estado", x.profile && x.profile.city) +
+                        window.infoLine("Uso CFDI", x.profile && x.profile.cfdi) +
+                        window.infoLine("Mi correo", x.profile && x.profile.email) +
+                        window.infoLine("Forma de pago", x.profile && x.profile.pay) +
+                    '</div>' +
+                    '<div class="info-line" style="margin-top:8px"><b>Notas / IA:</b><br>' + window.escapeHtml(x.data || "") + '</div>' +
+                '</details>';
+        }else{
+            fullInfo =
+                '<div class="info-grid">' +
+                    window.infoLine("Fecha", x.date) +
+                    window.infoLine("Vence", x.due) +
+                    window.infoLine("Folio", x.folio) +
+                '</div>';
+        }
+
+        var urlBlock = x.invoiceUrl
+            ? '<div class="info-line" style="margin-top:8px"><b>URL Factura:</b><br><a href="' + window.escapeHtml(x.invoiceUrl) + '" target="_blank" style="color:var(--acc)">' + window.escapeHtml(x.invoiceUrl) + '</a></div>'
+            : "";
+
+        var photoBlock = x.photo && viewMode === "full"
+            ? '<img class="thumb" src="' + x.photo + '" onclick="window.openPhotoModalById(\'' + x.id + '\')">'
+            : "";
+
+        d.innerHTML =
+            '<div class="ticket-head">' +
+                '<div>' +
+                    '<h3 class="ticket-title">' + window.escapeHtml(x.store || "Sin tienda") + '</h3>' +
+                    '<div class="mini">' + window.escapeHtml(x.date || "Sin fecha") + '</div>' +
+                '</div>' +
+                '<div class="ticket-total">' + window.money(x.total) + '</div>' +
+            '</div>' +
+            '<div class="chips">' + window.getTicketStatusChips(x) + '</div>' +
+            photoBlock +
+            fullInfo +
+            urlBlock +
+            '<div class="btnrow">' +
+                '<button class="orange" onclick="window.editTicket(\'' + x.id + '\')">Editar</button>' +
+                '<button class="ghost" onclick="window.openPhotoModalById(\'' + x.id + '\')">Ver foto</button>' +
+                '<button class="warn" onclick="window.openInvoiceUrl(\'' + x.id + '\')">Facturar</button>' +
+                '<button class="ghost" onclick="window.emailTicketById(\'' + x.id + '\')">Email</button>' +
+                '<button class="ghost" onclick="window.whatsappTicketById(\'' + x.id + '\')">WhatsApp</button>' +
+                '<button class="ghost" onclick="window.copyTicketMessage(\'' + x.id + '\')">Copiar</button>' +
+                '<button class="ghost" onclick="window.shareTicketObj(\'' + x.id + '\')">Compartir</button>' +
+                '<button class="okbtn" onclick="window.markTicketFacturada(\'' + x.id + '\')">Facturada</button>' +
+                '<button class="ghost" onclick="window.markTicketSolicitada(\'' + x.id + '\')">Solicitada</button>' +
+                '<button class="bad" onclick="window.deleteTicket(\'' + x.id + '\')">Eliminar</button>' +
+            '</div>';
+
+        box.appendChild(d);
+    });
+};
+
+window.infoLine = function(label, value){
+    var v = value;
+
+    if(v === null || v === undefined || v === ""){
+        v = "N/A";
+    }
+
+    return '<div class="info-line"><b>' + window.escapeHtml(label) + ':</b><br>' + window.escapeHtml(v) + '</div>';
+};
+
+window.renderAlerts = function(a){
+    var al = window.el("alerts");
+
+    if(!al) return;
+
+    al.innerHTML = "";
+
+    var pend = a.filter(function(x){
+        return x.status !== "Facturada" && x.status !== "No facturable";
+    });
+
+    var vencidas = pend.filter(function(x){
+        var d = window.daysBetween(x.due);
+        return d !== null && d < 0;
+    });
+
+    var pronto = pend.filter(function(x){
+        var d = window.daysBetween(x.due);
+        return d !== null && d >= 0 && d <= 7;
+    });
+
+    var sinInfo = pend.filter(function(x){
+        return !x.invoiceUrl && !x.issuerEmail && !x.issuerWhatsapp;
+    });
+
+    var duplicates = window.findAllDuplicates(a);
+
+    if(!vencidas.length && !pronto.length && !sinInfo.length && !duplicates.length){
+        al.innerHTML = '<p class="mini">No hay alertas importantes por ahora.</p>';
+        return;
+    }
+
+    if(vencidas.length){
+        al.innerHTML += '<h3>Vencidas</h3>';
+        vencidas.forEach(function(x){
+            al.innerHTML += window.alertCard(x, "Vencida", "badchip");
         });
     }
 
-    var al = window.el("alerts");
-
-    if(al){
-        al.innerHTML = "";
-
-        var today = new Date(window.today());
-
-        pend.forEach(function(x){
-            if(!x.due) return;
-
-            var due = new Date(x.due);
-            var diff = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
-
-            if(diff <= 30){
-                al.innerHTML +=
-                    '<div class="item" style="border-left:4px solid var(--warn)">' +
-                    "<b>" + (x.store || "Sin tienda") + "</b><br>" +
-                    "Vence: " + x.due + "<br>" +
-                    "Días restantes: " + diff +
-                    "</div>";
-            }
+    if(pronto.length){
+        al.innerHTML += '<h3>Vencen en 7 días</h3>';
+        pronto.forEach(function(x){
+            al.innerHTML += window.alertCard(x, "Vence pronto", "orangechip");
         });
+    }
 
-        if(!al.innerHTML){
-            al.innerHTML = '<p class="mini">No hay facturas próximas a vencer.</p>';
-        }
+    if(sinInfo.length){
+        al.innerHTML += '<h3>Sin contacto para facturar</h3>';
+        sinInfo.forEach(function(x){
+            al.innerHTML += window.alertCard(x, "Falta URL, email o WhatsApp", "warn");
+        });
+    }
+
+    if(duplicates.length){
+        al.innerHTML += '<h3>Posibles duplicados</h3>';
+        duplicates.forEach(function(pair){
+            al.innerHTML +=
+                '<div class="item" style="border-left:4px solid var(--orange)">' +
+                    '<b>' + window.escapeHtml(pair.key) + '</b><br>' +
+                    '<span class="mini">Tickets parecidos: ' + pair.ids.length + '</span>' +
+                '</div>';
+        });
     }
 };
 
+window.alertCard = function(x, label, chipClass){
+    return '<div class="item" style="border-left:4px solid var(--warn)">' +
+        '<div class="ticket-head">' +
+            '<div><b>' + window.escapeHtml(x.store || "Sin tienda") + '</b><div class="mini">' + window.escapeHtml(x.date || "") + '</div></div>' +
+            '<div class="ticket-total">' + window.money(x.total) + '</div>' +
+        '</div>' +
+        '<div class="chips"><span class="chip ' + chipClass + '">' + label + '</span><span class="chip">Vence: ' + window.escapeHtml(x.due || "N/A") + '</span></div>' +
+        '<div class="btnrow">' +
+            '<button class="orange" onclick="window.editTicket(\'' + x.id + '\')">Editar</button>' +
+            '<button class="warn" onclick="window.openInvoiceUrl(\'' + x.id + '\')">Facturar</button>' +
+            '<button class="ghost" onclick="window.copyTicketMessage(\'' + x.id + '\')">Copiar</button>' +
+        '</div>' +
+    '</div>';
+};
+
+window.findAllDuplicates = function(a){
+    var map = {};
+    var dup = [];
+
+    a.forEach(function(x){
+        var key = [
+            String(x.store || "").trim().toLowerCase(),
+            String(x.date || "").trim(),
+            Number(x.total || 0).toFixed(2)
+        ].join("|");
+
+        if(!map[key]) map[key] = [];
+        map[key].push(x.id);
+    });
+
+    Object.keys(map).forEach(function(k){
+        if(map[k].length > 1){
+            dup.push({
+                key:k,
+                ids:map[k]
+            });
+        }
+    });
+
+    return dup;
+};
+
+window.openInvoiceUrl = function(id){
+    var t = window.items[id];
+
+    if(!t) return;
+
+    if(t.invoiceUrl){
+        window.open(t.invoiceUrl, "_blank");
+    }else{
+        alert("Este ticket no tiene URL de facturación.");
+    }
+};
+
+window.emailTicketById = function(id){
+    var t = window.items[id];
+
+    if(!t) return;
+
+    window.emailTicketObj(t);
+};
+
+window.whatsappTicketById = function(id){
+    var t = window.items[id];
+
+    if(!t) return;
+
+    window.whatsappTicketObj(t);
+};
+
+window.markTicketFacturada = function(id){
+    if(!window.items[id]) return;
+
+    window.items[id].status = "Facturada";
+    window.items[id].updatedAt = window.nowText();
+    window.saveAll();
+    window.render();
+};
+
+window.markTicketSolicitada = function(id){
+    if(!window.items[id]) return;
+
+    window.items[id].status = "Solicitada";
+    window.items[id].updatedAt = window.nowText();
+    window.saveAll();
+    window.render();
+};
+
+window.deleteTicket = function(id){
+    if(!window.items[id]) return;
+
+    if(confirm("¿Eliminar este ticket?")){
+        delete window.items[id];
+        window.saveAll();
+        window.render();
+    }
+};
+
+window.openPhotoModalById = function(id){
+    var t = window.items[id];
+
+    if(!t || !t.photo){
+        alert("Este ticket no tiene foto guardada.");
+        return;
+    }
+
+    window.el("modalImg").src = t.photo;
+    window.show("photoModal");
+};
+
+window.closePhotoModal = function(){
+    window.el("modalImg").src = "";
+    window.hide("photoModal");
+};
+
+window.csvSafe = function(v){
+    return '"' + String(v ?? "").replace(/"/g, '""') + '"';
+};
+
+window.exportCSV = function(){
+    var a = window.arr();
+
+    var headers = [
+        "ID",
+        "Comercio",
+        "Fecha Ticket",
+        "Fecha Vencimiento",
+        "Dias Restantes",
+        "Total",
+        "Subtotal",
+        "Servicio Propina",
+        "Estatus",
+        "Metodo",
+        "Categoria",
+        "Forma Pago Detectada",
+        "Folio",
+        "Referencia Codigo",
+        "URL Factura",
+        "RFC Emisor",
+        "Email Emisor",
+        "WhatsApp Emisor",
+        "Notas IA",
+        "Razon Social",
+        "Mi RFC",
+        "Regimen Fiscal",
+        "Domicilio",
+        "Colonia CP",
+        "Ciudad Estado",
+        "Uso CFDI",
+        "Mi Correo",
+        "Forma Pago Perfil",
+        "Tiene Foto",
+        "Foto Base64",
+        "Fecha Captura",
+        "Ultima Modificacion"
+    ];
+
+    var rows = a.map(function(x){
+        var p = x.profile || {};
+
+        return [
+            x.id,
+            x.store,
+            x.date,
+            x.due,
+            window.daysBetween(x.due),
+            x.total,
+            x.subtotal,
+            x.service,
+            x.status,
+            x.method,
+            x.category,
+            x.payDetected,
+            x.folio,
+            x.ref,
+            x.invoiceUrl,
+            x.issuerRfc,
+            x.issuerEmail,
+            x.issuerWhatsapp,
+            x.data,
+            p.name,
+            p.rfc,
+            p.regimen,
+            p.address,
+            p.colony,
+            p.city,
+            p.cfdi,
+            p.email,
+            p.pay,
+            x.photo ? "Sí" : "No",
+            x.photo || "",
+            x.createdAt,
+            x.updatedAt
+        ].map(window.csvSafe).join(",");
+    });
+
+    var c = headers.map(window.csvSafe).join(",") + "\n" + rows.join("\n");
+
+    var b = document.createElement("a");
+    b.href = URL.createObjectURL(
+        new Blob(["\ufeff" + c], {type:"text/csv;charset=utf-8"})
+    );
+    b.download = "facturaia_tickets_completo.csv";
+    b.click();
+};
+
+window.exportPendingCSV = function(){
+    var original = window.arr();
+    var pendingIds = original
+        .filter(x => x.status !== "Facturada" && x.status !== "No facturable")
+        .map(x => x.id);
+
+    var oldItems = window.items;
+    var temp = {};
+
+    pendingIds.forEach(function(id){
+        temp[id] = oldItems[id];
+    });
+
+    var backup = window.items;
+    window.items = temp;
+    window.exportCSV();
+    window.items = backup;
+};
+
 window.exportJSON = function(){
+    var payload = {
+        exportedAt: window.nowText(),
+        profile: window.profile,
+        items: window.items
+    };
+
     var a = document.createElement("a");
     a.href = URL.createObjectURL(
-        new Blob([JSON.stringify(window.items, null, 2)], {type:"application/json"})
+        new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"})
     );
-    a.download = "respaldo_facturaia.json";
+    a.download = "respaldo_facturaia_completo.json";
     a.click();
 };
 
@@ -1340,9 +2329,21 @@ window.importJSON = function(ev){
 
     r.onload = function(){
         try{
-            window.items = JSON.parse(r.result || "{}");
+            var parsed = JSON.parse(r.result || "{}");
+
+            if(parsed.items){
+                window.items = parsed.items;
+                if(parsed.profile){
+                    window.profile = parsed.profile;
+                }
+            }else{
+                window.items = parsed;
+            }
+
             window.saveAll();
+            window.profileToForm();
             window.render();
+
             alert("Respaldo importado.");
         }catch(e){
             alert("Archivo inválido.");
@@ -1350,32 +2351,6 @@ window.importJSON = function(ev){
     };
 
     r.readAsText(f);
-};
-
-window.exportCSV = function(){
-    var a = window.arr();
-
-    var c = "Tienda,Fecha,Vencimiento,Total,Estatus,Folio,RFC Emisor\n" +
-        a.map(function(x){
-            return [
-                x.store,
-                x.date,
-                x.due,
-                x.total,
-                x.status,
-                x.folio,
-                x.issuerRfc
-            ].map(function(v){
-                return '"' + String(v || "").replace(/"/g, '""') + '"';
-            }).join(",");
-        }).join("\n");
-
-    var b = document.createElement("a");
-    b.href = URL.createObjectURL(
-        new Blob([c], {type:"text/csv;charset=utf-8"})
-    );
-    b.download = "facturas.csv";
-    b.click();
 };
 
 window.initApp = function(){
