@@ -1,4 +1,4 @@
-const CACHE_NAME = "factura-ia-v4";
+const CACHE_NAME = "factura-ia-v5";
 
 const ASSETS = [
   "./",
