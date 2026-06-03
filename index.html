@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>FacturaIA - Control Local</title><link rel="manifest" href="manifest.json"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="FacturaIA"><link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png"><script type="importmap">
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>FacturaIA - Control Local</title><!-- Soporte PWA e instalación nativa --><link rel="manifest" href="manifest.json"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="FacturaIA"><link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png"><!-- Importamos el SDK oficial de Google Generative AI para navegadores --><script type="importmap">
   {
     "imports": {
       "@google/generative-ai": "https://esm.run/@google/generative-ai"
@@ -60,6 +60,7 @@ label{display:block;font-size:12px;color:#b9c0db;margin-top:6px}
 @media(min-width:780px){.grid{grid-template-columns:repeat(4,1fr)}.row{grid-template-columns:repeat(4,1fr)}.row3{grid-template-columns:repeat(3,1fr)}.tabs{left:50%;transform:translateX(-50%);max-width:600px;border-radius:24px 24px 0 0}.wrap{padding-bottom:110px}}</style>
 </head><body>
 
+<!-- PANTALLA DE ACCESO -->
 <div id="lockScreen">
     <div class="box card">
         <span style="font-size:40px">🔒</span>
@@ -74,16 +75,21 @@ label{display:block;font-size:12px;color:#b9c0db;margin-top:6px}
 <main id="appContent" class="wrap hide">
 <div class="top"><div><h2 style="margin:0;font-size:20px">FacturaIA</h2><div class="mut" style="font-size:12px">Control Local Inteligente</div></div><button class="bad" style="padding:6px 10px;font-size:12px" onclick="window.resetAll()">Borrar todo</button></div>
 
+<!-- SECCIÓN 0: CAPTURA E IA -->
 <section id="p0"><div class="card"><div class="section-title"><h3>Nuevo ticket</h3><button id="btnOCR" class="warn" onclick="window.analyzeImageWithIA()">Reanalizar con IA</button></div><input id="cam" class="field" type="file" accept="image/*" capture="environment" onchange="window.loadPhoto(event)"><img id="preview" class="photo hide"><div class="bar"><i id="ocrBar"></i></div><div id="ocrStatus" class="mini">Toma una foto al ticket o selecciona un archivo para comenzar.</div><div class="chips" id="validationChips"></div><div class="row"><div><label id="lblStore">Lugar/Comercio</label><input id="store" class="field" oninput="window.validateFields()"></div><div><label id="lblDate">Fecha ticket</label><input id="date" class="field" type="date" oninput="window.validateFields()"></div><div><label id="lblTotal">Total mxn</label><input id="total" class="field" type="number" step=".01" oninput="window.validateFields()"></div><div><label>Vence factura</label><input id="due" class="field" type="date"></div></div><div class="row"><div><label id="lblFolio">Folio/Check</label><input id="folio" class="field" oninput="window.validateFields()"></div><div><label id="lblRef">Referencia/Código</label><input id="ref" class="field"></div><div><label id="lblUrl">URL Factura</label><input id="invoiceUrl" class="field" oninput="window.validateFields()"></div><div><label id="lblMethod">Vía</label><select id="method" class="field"><option>Web</option><option>WhatsApp</option><option>Email</option><option>Otro</option></select></div></div><div class="row"><div><label>Subtotal</label><input id="subtotal" class="field" type="number" step=".01"></div><div><label>Propina / Servicio</label><input id="service" class="field" type="number" step=".01"></div><div><label>RFC Emisor</label><input id="issuerRfc" class="field"></div><div><label>Email Emisor</label><input id="issuerEmail" class="field"></div></div><textarea id="data" class="field" rows="4" placeholder="Texto interpretado por la IA..."></textarea><div class="row"><select id="status" class="field"><option>Pendiente</option><option>Solicitada</option><option>Facturada</option></select><button onclick="window.saveTicket()">Guardar local</button><button class="ghost" onclick="window.completeDefaults()">Llenar campos</button><button class="warn" onclick="window.invoiceNow()">Facturar ya</button></div><div class="row"><button class="ghost" onclick="window.shareTicket()">Compartir ticket</button><button class="ghost" onclick="window.copyMessageCurrent()">Copiar texto fiscal</button></div></div><div id="kpis" class="grid"></div></section>
 
+<!-- SECCIÓN 1: HISTORIAL -->
 <section id="p1" class="hide"><div class="card"><h3>Historial de compras</h3><input id="q" class="field" placeholder="Buscar comercio o RFC..." oninput="window.render()"><div class="row"><button onclick="window.exportJSON()">Exportar Respaldo</button><button class="ghost" onclick="document.getElementById('imp').click()">Importar</button><button onclick="window.exportCSV()">Exportar CSV (Excel)</button></div><input id="imp" type="file" accept="application/json" class="hide" onchange="window.importJSON(event)"></div><div id="list"></div></section>
 
+<!-- SECCIÓN 2: ALERTAS -->
 <section id="p2" class="hide"><div class="card"><h3>Próximos a vencer (30 días)</h3><div id="alerts"></div></div></section>
 
+<!-- SECCIÓN 3: PERFIL FISCAL -->
 <section id="p3" class="hide"><div class="card"><div class="section-title"><h3>Mis Datos Fiscales</h3><button onclick="window.saveProfile()">Guardar perfil</button></div><div class="row3"><div><label>Razón social</label><input id="pfName" class="field"></div><div><label>Mi RFC</label><input id="pfRfc" class="field"></div><div><label>Régimen fiscal</label><input id="pfRegimen" class="field"></div></div><div class="row3"><div><label>Domicilio</label><input id="pfAddress" class="field"></div><div><label>Colonia y C.P.</label><input id="pfColony" class="field"></div><div><label>Ciudad y Estado</label><input id="pfCity" class="field"></div></div><div class="row3"><div><label>Uso de CFDI</label><input id="pfCfdi" class="field"></div><div><label>Mi Correo</label><input id="pfEmail" class="field"></div><div><label>Forma de pago</label><input id="pfPay" class="field"></div></div></div><div class="card"><h3>Logs de diagnóstico</h3><div id="debugApp" class="debug">Sistema de IA Iniciado. Listo en Celular.</div></div></section></main>
 
 <nav id="appNav" class="tabs hide"><div class="tab active" onclick="window.tab(0)"><span>📷</span>Escanear</div><div class="tab" onclick="window.tab(1)"><span>📜</span>Historial</div><div class="tab" onclick="window.tab(2)"><span>⏰</span>Alertas</div><div class="tab" onclick="window.tab(3)"><span>👤</span>Perfil</div></nav>
 
+<!-- SCRIPT ÚNICO DE INICIALIZACIÓN Y ENLACE GLOBAL -->
 <script type="module">
 import { GoogleGenAI } from "@google/generative-ai";
 
@@ -120,14 +126,15 @@ window.tab = function(n){
     window.render();
 };
 
+// Función de acceso global corregida para responder de inmediato
 window.checkAccess = function() {
     var inputEl = document.getElementById("passInput");
     if (!inputEl) return;
     if(inputEl.value === "VVH") {
         localStorage.setItem("app_permanent_unlocked", "true");
-        document.getElementById("lockScreen").classList.add("hide");
-        document.getElementById("appContent").classList.remove("hide");
-        document.getElementById("appNav").classList.remove("hide");
+        if(document.getElementById("lockScreen")) document.getElementById("lockScreen").classList.add("hide");
+        if(document.getElementById("appContent")) document.getElementById("appContent").classList.remove("hide");
+        if(document.getElementById("appNav")) document.getElementById("appNav").classList.remove("hide");
         window.initApp();
     } else {
         var errorEl = document.getElementById("lockError");
@@ -191,7 +198,8 @@ window.analyzeImageWithIA = async function(){
 
         const result = await model.generateContent([prompt, imagePart]);
         const responseText = await result.response.text();
-        const cleanJson = responseText.replace(/```json|```/g, "").trim();
+        const cleanJson = responseText.replace(/```json|
+```/g, "").trim();
         const data = JSON.parse(cleanJson);
         
         window.applyExtracted(data);
@@ -232,7 +240,7 @@ window.validateFields = function(){
     var m=window.missingInfo(); var ids=["store","date","total"]; 
     for(var i=0; i<ids.length; i++){ if(window.el(ids[i])){window.el(ids[i]).classList.toggle("missing",!window.el(ids[i]).value);window.el(ids[i]).classList.toggle("good",!!window.el(ids[i]).value);}} 
     var h=""; for(var j=0; j<m.length; j++){h+=`<span class="chip warn">Falta ${m[j]}</span>`} if(!m.length){h='<span class="chip ok">Listo para Guardar</span>'} 
-    window.el("validationChips").innerHTML=h; return m; 
+    if(window.el("validationChips")){window.el("validationChips").innerHTML=h;} return m; 
 };
 
 window.currentTicketObj = function(){ window.formToProfile(); return {id:window.gid(),store:window.el("store").value,date:window.el("date").value,due:window.el("due").value,total:parseFloat(window.el("total").value)||0,subtotal:parseFloat(window.el("subtotal").value)||0,service:parseFloat(window.el("service").value)||0,issuerRfc:window.el("issuerRfc").value,issuerEmail:window.el("issuerEmail").value,folio:window.el("folio").value,ref:window.el("ref").value,invoiceUrl:window.el("invoiceUrl").value,data:window.el("data").value,method:window.el("method").value,status:window.el("status").value,photo:window.photo,profile:window.profile}; };
@@ -265,7 +273,7 @@ window.initApp = function(){
     window.loadAll(); window.profileToForm(); window.validateFields(); window.render();
 };
 
-// Autoejecución si ya fue desbloqueado previamente
+// Comprobación de desbloqueo previo al arrancar
 if(localStorage.getItem("app_permanent_unlocked") === "true") {
     if(document.getElementById("lockScreen")) document.getElementById("lockScreen").classList.add("hide");
     if(document.getElementById("appContent")) document.getElementById("appContent").classList.remove("hide");
