@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>FacturaIA - Control Local</title><!-- Soporte PWA e instalación nativa --><link rel="manifest" href="manifest.json"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="FacturaIA"><link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png"><!-- Importamos el SDK oficial de Google Generative AI para navegadores --><script type="importmap">
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>FacturaIA - Control Local</title><link rel="manifest" href="manifest.json"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="FacturaIA"><link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png"><script type="importmap">
   {
     "imports": {
       "@google/generative-ai": "https://esm.run/@google/generative-ai"
@@ -49,7 +49,6 @@ label{display:block;font-size:12px;color:#b9c0db;margin-top:6px}
 .chip.warn{background:#4a3410;color:#ffd166}
 .chip.ok{background:#163a35;color:#8ef0df}
 
-/* Pantalla de Bloqueo de Seguridad */
 #lockScreen {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
     background: radial-gradient(circle at top,#11143b,#0a0a1a 55%,#070711);
@@ -59,9 +58,68 @@ label{display:block;font-size:12px;color:#b9c0db;margin-top:6px}
 #lockScreen .box { max-width: 320px; width: 100%; text-align: center; }
 
 @media(min-width:780px){.grid{grid-template-columns:repeat(4,1fr)}.row{grid-template-columns:repeat(4,1fr)}.row3{grid-template-columns:repeat(3,1fr)}.tabs{left:50%;transform:translateX(-50%);max-width:600px;border-radius:24px 24px 0 0}.wrap{padding-bottom:110px}}</style>
+</head><body>
 
-<script>
-// Acceso global básico inmediato para el candado
+<div id="lockScreen">
+    <div class="box card">
+        <span style="font-size:40px">🔒</span>
+        <h2 style="margin:10px 0 5px 0; font-size: 22px;">Acceso Único</h2>
+        <p class="mini" style="margin-bottom:20px">Configura el dispositivo con la contraseña local.</p>
+        <input id="passInput" type="password" class="field" placeholder="Contraseña" style="text-align:center; font-size:18px;" onkeydown="if(event.key==='Enter')window.checkAccess()">
+        <button id="btnUnlock" onclick="window.checkAccess()" style="width:100%; margin-top:10px;">Desbloquear para siempre</button>
+        <p id="lockError" class="mini" style="color:var(--bad); margin-top:10px; font-weight:bold; display:none;">Contraseña incorrecta</p>
+    </div>
+</div>
+
+<main id="appContent" class="wrap hide">
+<div class="top"><div><h2 style="margin:0;font-size:20px">FacturaIA</h2><div class="mut" style="font-size:12px">Control Local Inteligente</div></div><button class="bad" style="padding:6px 10px;font-size:12px" onclick="window.resetAll()">Borrar todo</button></div>
+
+<section id="p0"><div class="card"><div class="section-title"><h3>Nuevo ticket</h3><button id="btnOCR" class="warn" onclick="window.analyzeImageWithIA()">Reanalizar con IA</button></div><input id="cam" class="field" type="file" accept="image/*" capture="environment" onchange="window.loadPhoto(event)"><img id="preview" class="photo hide"><div class="bar"><i id="ocrBar"></i></div><div id="ocrStatus" class="mini">Toma una foto al ticket o selecciona un archivo para comenzar.</div><div class="chips" id="validationChips"></div><div class="row"><div><label id="lblStore">Lugar/Comercio</label><input id="store" class="field" oninput="window.validateFields()"></div><div><label id="lblDate">Fecha ticket</label><input id="date" class="field" type="date" oninput="window.validateFields()"></div><div><label id="lblTotal">Total mxn</label><input id="total" class="field" type="number" step=".01" oninput="window.validateFields()"></div><div><label>Vence factura</label><input id="due" class="field" type="date"></div></div><div class="row"><div><label id="lblFolio">Folio/Check</label><input id="folio" class="field" oninput="window.validateFields()"></div><div><label id="lblRef">Referencia/Código</label><input id="ref" class="field"></div><div><label id="lblUrl">URL Factura</label><input id="invoiceUrl" class="field" oninput="window.validateFields()"></div><div><label id="lblMethod">Vía</label><select id="method" class="field"><option>Web</option><option>WhatsApp</option><option>Email</option><option>Otro</option></select></div></div><div class="row"><div><label>Subtotal</label><input id="subtotal" class="field" type="number" step=".01"></div><div><label>Propina / Servicio</label><input id="service" class="field" type="number" step=".01"></div><div><label>RFC Emisor</label><input id="issuerRfc" class="field"></div><div><label>Email Emisor</label><input id="issuerEmail" class="field"></div></div><textarea id="data" class="field" rows="4" placeholder="Texto interpretado por la IA..."></textarea><div class="row"><select id="status" class="field"><option>Pendiente</option><option>Solicitada</option><option>Facturada</option></select><button onclick="window.saveTicket()">Guardar local</button><button class="ghost" onclick="window.completeDefaults()">Llenar campos</button><button class="warn" onclick="window.invoiceNow()">Facturar ya</button></div><div class="row"><button class="ghost" onclick="window.shareTicket()">Compartir ticket</button><button class="ghost" onclick="window.copyMessageCurrent()">Copiar texto fiscal</button></div></div><div id="kpis" class="grid"></div></section>
+
+<section id="p1" class="hide"><div class="card"><h3>Historial de compras</h3><input id="q" class="field" placeholder="Buscar comercio o RFC..." oninput="window.render()"><div class="row"><button onclick="window.exportJSON()">Exportar Respaldo</button><button class="ghost" onclick="document.getElementById('imp').click()">Importar</button><button onclick="window.exportCSV()">Exportar CSV (Excel)</button></div><input id="imp" type="file" accept="application/json" class="hide" onchange="window.importJSON(event)"></div><div id="list"></div></section>
+
+<section id="p2" class="hide"><div class="card"><h3>Próximos a vencer (30 días)</h3><div id="alerts"></div></div></section>
+
+<section id="p3" class="hide"><div class="card"><div class="section-title"><h3>Mis Datos Fiscales</h3><button onclick="window.saveProfile()">Guardar perfil</button></div><div class="row3"><div><label>Razón social</label><input id="pfName" class="field"></div><div><label>Mi RFC</label><input id="pfRfc" class="field"></div><div><label>Régimen fiscal</label><input id="pfRegimen" class="field"></div></div><div class="row3"><div><label>Domicilio</label><input id="pfAddress" class="field"></div><div><label>Colonia y C.P.</label><input id="pfColony" class="field"></div><div><label>Ciudad y Estado</label><input id="pfCity" class="field"></div></div><div class="row3"><div><label>Uso de CFDI</label><input id="pfCfdi" class="field"></div><div><label>Mi Correo</label><input id="pfEmail" class="field"></div><div><label>Forma de pago</label><input id="pfPay" class="field"></div></div></div><div class="card"><h3>Logs de diagnóstico</h3><div id="debugApp" class="debug">Sistema de IA Iniciado. Listo en Celular.</div></div></section></main>
+
+<nav id="appNav" class="tabs hide"><div class="tab active" onclick="window.tab(0)"><span>📷</span>Escanear</div><div class="tab" onclick="window.tab(1)"><span>📜</span>Historial</div><div class="tab" onclick="window.tab(2)"><span>⏰</span>Alertas</div><div class="tab" onclick="window.tab(3)"><span>👤</span>Perfil</div></nav>
+
+<script type="module">
+import { GoogleGenAI } from "@google/generative-ai";
+
+const ENCRYPTED_KEY = "\x16\x12\x03\x30\x04\x31\x19\x1f\x39\x15\x3c\x13\x11\x32\x04\x13\x25\x36\x3c\x2c\x24\x38\x32\x15\x1e\x32\x00\x1f\x39\x1e\x2b\x36\x03\x2c\x30\x3d\x23\x0c\x18\x25\x34\x01\x11"; 
+
+window.decryptKey = function(cipher, salt) {
+    try { return cipher.split("").map((c, i) => String.fromCharCode(c.charCodeAt(0) ^ salt.charCodeAt(i % salt.length))).join(""); } catch(e) { return ""; }
+};
+
+// Variables base globales
+window.items={}; window.photo=""; window.sourceCanvas=null;
+window.profile={name:"",rfc:"",regimen:"",address:"",colony:"",city:"",cfdi:"Gastos en general",email:"",pay:"Tarjeta de crédito"};
+
+window.el = id => document.getElementById(id);
+window.setVal = (id,v) => { if(window.el(id)&&v!==undefined&&v!==null){window.el(id).value=v} };
+window.setText = (id,t) => { if(window.el(id)){window.el(id).textContent=t||""} };
+window.today = () => new Date().toISOString().slice(0,10);
+window.addDays = (ds,n) => { var d=new Date(ds||window.today()); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
+window.gid = () => Date.now()+"_"+Math.random().toString(36).slice(2,8);
+
+window.log = function(t){
+    var s=new Date().toLocaleTimeString()+" | "+t;
+    if(window.el("debugApp")){window.el("debugApp").textContent=s+String.fromCharCode(10)+window.el("debugApp").textContent}
+    console.log(s);
+};
+
+// Control de navegación corregido
+window.tab = function(n){
+    var s=["p0","p1","p2","p3"]; var t=document.getElementsByClassName("tab");
+    for(var i=0;i<4;i++){
+        if(window.el(s[i])) window.el(s[i]).classList.toggle("hide",i!==n);
+        if(t[i]) t[i].classList.toggle("active",i===n);
+    }
+    window.render();
+};
+
 window.checkAccess = function() {
     var inputEl = document.getElementById("passInput");
     if (!inputEl) return;
@@ -70,66 +128,12 @@ window.checkAccess = function() {
         document.getElementById("lockScreen").classList.add("hide");
         document.getElementById("appContent").classList.remove("hide");
         document.getElementById("appNav").classList.remove("hide");
-        if (typeof window.initApp === "function") window.initApp();
+        window.initApp();
     } else {
         var errorEl = document.getElementById("lockError");
         if (errorEl) errorEl.style.display = "block";
         inputEl.value = "";
     }
-};
-</script>
-</head><body>
-
-<!-- PANTALLA DE ACCESO -->
-<div id="lockScreen">
-    <div class="box card">
-        <span style="font-size:40px">🔒</span>
-        <h2 style="margin:10px 0 5px 0; font-size: 22px;">Acceso Único</h2>
-        <p class="mini" style="margin-bottom:20px">Configura el dispositivo con la contraseña local.</p>
-        <input id="passInput" type="password" class="field" placeholder="Contraseña" style="text-align:center; font-size:18px;" onkeydown="if(event.key==='Enter')window.checkAccess()">
-        <button onclick="window.checkAccess()" style="width:100%; margin-top:10px;">Desbloquear para siempre</button>
-        <p id="lockError" class="mini" style="color:var(--bad); margin-top:10px; font-weight:bold; display:none;">Contraseña incorrecta</p>
-    </div>
-</div>
-
-<main id="appContent" class="wrap hide">
-<div class="top"><div><h2 style="margin:0;font-size:20px">FacturaIA</h2><div class="mut" style="font-size:12px">Control Local Inteligente</div></div><button class="bad" style="padding:6px 10px;font-size:12px" onclick="resetAll()">Borrar todo</button></div>
-
-<!-- SECCIÓN 0: CAPTURA E IA -->
-<section id="p0"><div class="card"><div class="section-title"><h3>Nuevo ticket</h3><button id="btnOCR" class="warn" onclick="analyzeImageWithIA()">Reanalizar con IA</button></div><input id="cam" class="field" type="file" accept="image/*" capture="environment" onchange="loadPhoto(event)"><img id="preview" class="photo hide"><div class="bar"><i id="ocrBar"></i></div><div id="ocrStatus" class="mini">Toma una foto al ticket. La IA extraerá los datos automáticamente de forma inteligente.</div><div class="chips" id="validationChips"></div><div class="row"><div><label id="lblStore">Lugar/Comercio</label><input id="store" class="field" oninput="validateFields()"></div><div><label id="lblDate">Fecha ticket</label><input id="date" class="field" type="date" oninput="validateFields()"></div><div><label id="lblTotal">Total mxn</label><input id="total" class="field" type="number" step=".01" oninput="validateFields()"></div><div><label>Vence factura</label><input id="due" class="field" type="date"></div></div><div class="row"><div><label id="lblFolio">Folio/Check</label><input id="folio" class="field" oninput="validateFields()"></div><div><label id="lblRef">Referencia/Código</label><input id="ref" class="field"></div><div><label id="lblUrl">URL Factura</label><input id="invoiceUrl" class="field" oninput="validateFields()"></div><div><label id="lblMethod">Vía</label><select id="method" class="field"><option>Web</option><option>WhatsApp</option><option>Email</option><option>Otro</option></select></div></div><div class="row"><div><label>Subtotal</label><input id="subtotal" class="field" type="number" step=".01"></div><div><label>Propina / Servicio</label><input id="service" class="field" type="number" step=".01"></div><div><label>RFC Emisor</label><input id="issuerRfc" class="field"></div><div><label>Email Emisor</label><input id="issuerEmail" class="field"></div></div><textarea id="data" class="field" rows="4" placeholder="Texto interpretado por la IA..."></textarea><div class="row"><select id="status" class="field"><option>Pendiente</option><option>Solicitada</option><option>Facturada</option></select><button onclick="saveTicket()">Guardar local</button><button class="ghost" onclick="completeDefaults()">Llenar campos</button><button class="warn" onclick="invoiceNow()">Facturar ya</button></div><div class="row"><button class="ghost" onclick="shareTicket()">Compartir ticket</button><button class="ghost" onclick="copyMessageCurrent()">Copiar texto fiscal</button></div></div><div id="kpis" class="grid"></div></section>
-
-<!-- SECCIÓN 1: HISTORIAL -->
-<section id="p1" class="hide"><div class="card"><h3>Historial de compras</h3><input id="q" class="field" placeholder="Buscar comercio o RFC..." oninput="render()"><div class="row"><button onclick="exportJSON()">Exportar Respaldo</button><button class="ghost" onclick="document.getElementById('imp').click()">Importar</button><button onclick="exportCSV()">Exportar CSV (Excel)</button></div><input id="imp" type="file" accept="application/json" class="hide" onchange="importJSON(event)"></div><div id="list"></div></section>
-
-<!-- SECCIÓN 2: ALERTAS -->
-<section id="p2" class="hide"><div class="card"><h3>Próximos a vencer (30 días)</h3><div id="alerts"></div></div></section>
-
-<!-- SECCIÓN 3: PERFIL FISCAL --><section id="p3" class="hide"><div class="card"><div class="section-title"><h3>Mis Datos Fiscales</h3><button onclick="saveProfile()">Guardar perfil</button></div><div class="row3"><div><label>Razón social</label><input id="pfName" class="field"></div><div><label>Mi RFC</label><input id="pfRfc" class="field"></div><div><label>Régimen fiscal</label><input id="pfRegimen" class="field"></div></div><div class="row3"><div><label>Domicilio</label><input id="pfAddress" class="field"></div><div><label>Colonia y C.P.</label><input id="pfColony" class="field"></div><div><label>Ciudad y Estado</label><input id="pfCity" class="field"></div></div><div class="row3"><div><label>Uso de CFDI</label><input id="pfCfdi" class="field"></div><div><label>Mi Correo</label><input id="pfEmail" class="field"></div><div><label>Forma de pago</label><input id="pfPay" class="field"></div></div></div><div class="card"><h3>Logs de diagnóstico</h3><div id="debugApp" class="debug">Sistema de IA Iniciado. Listo en Celular.</div></div></section></main>
-
-<nav id="appNav" class="tabs hide"><div class="tab active" onclick="tab(0)"><span>📷</span>Escanear</div><div class="tab" onclick="tab(1)"><span>📜</span>Historial</div><div class="tab" onclick="tab(2)"><span>⏰</span>Alertas</div><div class="tab" onclick="tab(3)"><span>👤</span>Perfil</div></nav>
-
-<!-- LÓGICA DE APLICACIÓN TOTALMENTE VINCULADA AL ENTORNO GLOBAL WINDOW -->
-<script type="module">import { GoogleGenAI } from "@google/generative-ai";
-
-const ENCRYPTED_KEY = "\x16\x12\x03\x30\x04\x31\x19\x1f\x39\x15\x3c\x13\x11\x32\x04\x13\x25\x36\x3c\x2c\x24\x38\x32\x15\x1e\x32\x00\x1f\x39\x1e\x2b\x36\x03\x2c\x30\x3d\x23\x0c\x18\x25\x34\x01\x11"; 
-
-window.decryptKey = function(cipher, salt) {
-    try { return cipher.split("").map((c, i) => String.fromCharCode(c.charCodeAt(0) ^ salt.charCodeAt(i % salt.length))).join(""); } catch(e) { return ""; }
-};
-
-window.items={};window.photo="";window.sourceCanvas=null;window.profile={name:"",rfc:"",regimen:"",address:"",colony:"",city:"",cfdi:"Gastos en general",email:"",pay:"Tarjeta de crédito"};
-window.el = id => document.getElementById(id);window.clean = s => String(s||"");window.setVal = (id,v) => { if(window.el(id)&&v!==undefined&&v!==null&&String(v)!==""){window.el(id).value=v} };window.setText = (id,t) => { if(window.el(id)){window.el(id).textContent=t||""} };window.today = () => new Date().toISOString().slice(0,10);window.addDays = (ds,n) => { var d=new Date(ds||window.today()); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };window.gid = () => Date.now()+"_"+Math.random().toString(36).slice(2,8);
-
-window.log = function(t){
-    var s=new Date().toLocaleTimeString()+" | "+t;
-    if(window.el("debugApp")){window.el("debugApp").textContent=s+String.fromCharCode(10)+window.el("debugApp").textContent}
-    console.log(s);
-};
-
-window.tab = function(n){
-    var s=["p0","p1","p2","p3"]; var t=document.getElementsByClassName("tab");
-    for(var i=0;i<4;i++){window.el(s[i]).classList.toggle("hide",i!==n);if(t[i])t[i].classList.toggle("active",i===n)}
-    window.render();
 };
 
 window.loadPhoto = function(ev){
@@ -148,7 +152,7 @@ window.loadPhoto = function(ev){
             window.photo=c.toDataURL("image/jpeg",0.75);
             window.el("preview").src=window.photo;
             window.el("preview").classList.remove("hide");
-            window.setText("ocrStatus","Foto cargada. Enviando automáticamente a Gemini IA...");
+            window.setText("ocrStatus","Foto cargada. Procesando con Gemini...");
             setTimeout(function(){ window.analyzeImageWithIA() },300);
         };
         im.src=r.result;
@@ -159,11 +163,11 @@ window.loadPhoto = function(ev){
 window.analyzeImageWithIA = async function(){
     if(!window.sourceCanvas){alert("Primero toma o carga una foto");return}
     const REAL_API_KEY = window.decryptKey(ENCRYPTED_KEY, "VVH");
-    if(!REAL_API_KEY){ window.setText("ocrStatus","Error: Clave corrupta."); return; }
+    if(!REAL_API_KEY){ window.setText("ocrStatus","Error de Clave."); return; }
     
     window.el("btnOCR").disabled=true;
     window.el("ocrBar").style.width="50%";
-    window.setText("ocrStatus","Gemini IA leyendo montos, RFC y folios...");
+    window.setText("ocrStatus","Gemini IA analizando ticket...");
 
     try {
         const ai = new GoogleGenAI({ apiKey: REAL_API_KEY });
@@ -187,15 +191,14 @@ window.analyzeImageWithIA = async function(){
 
         const result = await model.generateContent([prompt, imagePart]);
         const responseText = await result.response.text();
-        const cleanJson = responseText.replace(/```json|
-```/g, "").trim();
+        const cleanJson = responseText.replace(/```json|```/g, "").trim();
         const data = JSON.parse(cleanJson);
         
         window.applyExtracted(data);
-        window.setText("ocrStatus","¡Procesado de forma inteligente por la IA!");
+        window.setText("ocrStatus","¡Procesado por la IA!");
         window.el("ocrBar").style.width="100%";
     } catch (e) {
-        window.setText("ocrStatus","Error de lectura IA: "+e.message);
+        window.setText("ocrStatus","Error IA: "+e.message);
         window.el("ocrBar").style.width="0%";
     }
     window.el("btnOCR").disabled=false;
@@ -212,19 +215,19 @@ window.applyExtracted = function(x){
     if(x.url) { window.setVal("invoiceUrl",x.url); window.el("method").value="Web"; }
     if(x.email) { window.setVal("issuerEmail",x.email); window.el("method").value="Email"; }
     if(x.rfc) window.setVal("issuerRfc",x.rfc);
-    window.el("data").value = `--- DETECCIONES IA ---\nRFC Emisor: ${x.rfc||'?'}\nTotal: $${x.total||'?'}\nSitio Web: ${x.url||'?'}`;
+    window.el("data").value = `--- DETECCIONES IA ---\nRFC Emisor: ${x.rfc||'?'}\nTotal: $${x.total||'?'}`;
 };
 
 window.arr = function(){ var a=[]; for(var k in window.items){a.push(window.items[k])} a.sort((x,y)=>String(x.due||"").localeCompare(String(y.due||""))); return a; };
 window.saveAll = function(){ localStorage.setItem("fac_ia_items",JSON.stringify(window.items)); localStorage.setItem("fac_ia_profile",JSON.stringify(window.profile)); };
 window.loadAll = function(){ try{window.items=JSON.parse(localStorage.getItem("fac_ia_items")||"{}")}catch(e){} try{var p=JSON.parse(localStorage.getItem("fac_ia_profile")||"null");if(p){window.profile=p}}catch(e){} };
-window.resetAll = function(){ if(confirm("¿Borrar todos los datos locales de la app?")){window.items={};localStorage.removeItem("app_permanent_unlocked");window.saveAll();location.reload();} };
+window.resetAll = function(){ if(confirm("¿Borrar app?")){window.items={};localStorage.removeItem("app_permanent_unlocked");window.saveAll();location.reload();} };
+
 window.profileToForm = function(){ window.setVal("pfName",window.profile.name); window.setVal("pfRfc",window.profile.rfc); window.setVal("pfRegimen",window.profile.regimen); window.setVal("pfAddress",window.profile.address); window.setVal("pfColony",window.profile.colony); window.setVal("pfCity",window.profile.city); window.setVal("pfCfdi",window.profile.cfdi); window.setVal("pfEmail",window.profile.email); window.setVal("pfPay",window.profile.pay); };
 window.formToProfile = function(){ window.profile={name:window.el("pfName").value,rfc:window.el("pfRfc").value,regimen:window.el("pfRegimen").value,address:window.el("pfAddress").value,colony:window.el("pfColony").value,city:window.el("pfCity").value,cfdi:window.el("pfCfdi").value,email:window.el("pfEmail").value,pay:window.el("pfPay").value}; return window.profile; };
-window.saveProfile = function(){ window.saveProfileNative(); };
-window.saveProfileNative = function(){ window.formToProfile(); window.saveAll(); alert("Perfil Fiscal guardado localmente."); };
-window.missingInfo = function(){ var m=[]; if(!window.el("store").value){m.push("tienda")} if(!window.el("date").value){m.push("fecha")} if(!(parseFloat(window.el("total").value)||0)){m.push("total")} return m; };
+window.saveProfile = function(){ window.formToProfile(); window.saveAll(); alert("Perfil Fiscal guardado."); };
 
+window.missingInfo = function(){ var m=[]; if(!window.el("store").value){m.push("tienda")} if(!window.el("date").value){m.push("fecha")} if(!(parseFloat(window.el("total").value)||0)){m.push("total")} return m; };
 window.validateFields = function(){ 
     var m=window.missingInfo(); var ids=["store","date","total"]; 
     for(var i=0; i<ids.length; i++){ if(window.el(ids[i])){window.el(ids[i]).classList.toggle("missing",!window.el(ids[i]).value);window.el(ids[i]).classList.toggle("good",!!window.el(ids[i]).value);}} 
@@ -233,42 +236,40 @@ window.validateFields = function(){
 };
 
 window.currentTicketObj = function(){ window.formToProfile(); return {id:window.gid(),store:window.el("store").value,date:window.el("date").value,due:window.el("due").value,total:parseFloat(window.el("total").value)||0,subtotal:parseFloat(window.el("subtotal").value)||0,service:parseFloat(window.el("service").value)||0,issuerRfc:window.el("issuerRfc").value,issuerEmail:window.el("issuerEmail").value,folio:window.el("folio").value,ref:window.el("ref").value,invoiceUrl:window.el("invoiceUrl").value,data:window.el("data").value,method:window.el("method").value,status:window.el("status").value,photo:window.photo,profile:window.profile}; };
-window.saveTicket = function(){ var t=window.currentTicketObj(); window.items[t.id]=t; window.saveAll(); window.render(); alert("Guardado con éxito."); };
-window.buildMessage = function(t){ var p=t.profile||window.profile; return `Solicitud de factura:\n\nEstablecimiento: ${t.store}\nFecha: ${t.date}\nTotal: $${t.total}\nFolio: ${t.folio||'N/A'}\n\nDatos Fiscales:\nRFC: ${p.rfc}\nRazón Social: ${p.name}\nRégimen: ${p.regimen}\nCP: ${p.colony}\nUso CFDI: ${p.cfdi}\nForma Pago: ${p.pay}`; };
-window.invoiceNow = function(){ var t=window.currentTicketObj(); if(t.invoiceUrl){window.open(t.invoiceUrl,"_blank")}else if(t.issuerEmail){window.location.href=`mailto:${t.issuerEmail}?subject=Facturacion&body=${encodeURIComponent(window.buildMessage(t))}`}else{alert("Copia el texto fiscal, no hay portal o email asignado automáticamente.")} };
-window.copyMessageCurrent = function(){ navigator.clipboard.writeText(window.buildMessage(window.currentTicketObj())); alert("Datos listos para enviar."); };
+window.saveTicket = function(){ var t=window.currentTicketObj(); window.items[t.id]=t; window.saveAll(); window.render(); alert("Guardado en Historial."); };
+window.buildMessage = function(t){ var p=t.profile||window.profile; return `Solicitud de factura:\n\nEstablecimiento: ${t.store}\nFecha: ${t.date}\nTotal: $${t.total}\nFolio: ${t.folio||'N/A'}\n\nDatos Fiscales:\nRFC: ${p.rfc}\nRazón Social: ${p.name}\nCP: ${p.colony}`; };
+window.invoiceNow = function(){ var t=window.currentTicketObj(); if(t.invoiceUrl){window.open(t.invoiceUrl,"_blank")}else if(t.issuerEmail){window.location.href=`mailto:${t.issuerEmail}?subject=Facturacion&body=${encodeURIComponent(window.buildMessage(t))}`}else{alert("Copia el texto fiscal.")} };
+window.copyMessageCurrent = function(){ navigator.clipboard.writeText(window.buildMessage(window.currentTicketObj())); alert("Copiado."); };
 window.shareTicket = function(){ if(navigator.share){navigator.share({title:'Ticket',text:window.buildMessage(window.currentTicketObj())})} };
 
-window.completeDefaults = function(){
-    window.setVal("due", window.addDays(window.el("date").value, 30));
-    window.validateFields();
-};
+window.completeDefaults = function(){ window.setVal("due", window.addDays(window.el("date").value, 30)); window.validateFields(); };
 
 window.render = function(){
     var a=window.arr(); var pend=a.filter(x=>x.status!=="Facturada");
     if(window.el("kpis")) window.el("kpis").innerHTML=`<div class=kpi><span>Pendientes</span><b>${pend.length}</b></div><div class=kpi><span>Total Registros</span><b>${a.length}</b></div>`;
     var box=window.el("list"); if(!box)return; box.innerHTML=""; var q=window.el("q").value.toLowerCase();
     a.filter(x=>x.store.toLowerCase().includes(q)).forEach(function(x){
-        var d=document.createElement("div"); d.className="item"; d.innerHTML=`<h3>${x.store} [${x.status}]</h3><p class=mut>${x.date} | Folio: ${x.folio||'-'}</p><p><b>$${x.total.toFixed(2)}</b></p>`;
+        var d=document.createElement("div"); d.className="item"; d.innerHTML=`<h3>${x.store} [${x.status}]</h3><p class=mut>${x.date}</p><p><b>$${x.total.toFixed(2)}</b></p>`;
         var b=document.createElement("button"); b.textContent="✓"; b.onclick=function(){window.items[x.id].status="Facturada";window.saveAll();window.render();}; d.appendChild(b);
         var b2=document.createElement("button"); b2.textContent="✕"; b2.className="bad"; b2.onclick=function(){if(confirm("¿Eliminar?")){delete window.items[x.id];window.saveAll();window.render();}}; d.appendChild(document.createTextNode(" ")); d.appendChild(b2);
         box.appendChild(d);
     });
-    var al=window.el("alerts"); if(al){ al.innerHTML=""; pend.forEach(x=>{ al.innerHTML+=`<div class=item style="border-left:4px solid var(--warn)">${x.store} - Vence: ${x.due} (Monto: $${x.total})</div>` }); }
+    var al=window.el("alerts"); if(al){ al.innerHTML=""; pend.forEach(x=>{ al.innerHTML+=`<div class=item style="border-left:4px solid var(--warn)">${x.store} - Vence: ${x.due}</div>` }); }
 };
 
-window.exportJSON = function(){ var a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([JSON.stringify(window.items)],{type:"text/plain"})); a.download="respaldo_facturas.json"; a.click(); };
+window.exportJSON = function(){ var a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([JSON.stringify(window.items)],{type:"text/plain"})); a.download="respaldo.json"; a.click(); };
 window.importJSON = function(ev){ var f=ev.target.files[0]; if(!f)return; var r=new FileReader(); r.onload=function(){ window.items=JSON.parse(r.result||"{}"); window.saveAll(); window.render(); }; r.readAsText(f); };
+window.exportCSV = function() { var a = window.arr(); var c = "Tienda,Fecha,Total,Estatus\n" + a.map(x => `"${x.store}","${x.date}",${x.total},"${x.status}"`).join("\n"); var b = document.createElement("a"); b.href = URL.createObjectURL(new Blob([c], {type: "text/csv"})); b.download = "facturas.csv"; b.click(); };
 
 window.initApp = function(){
     window.loadAll(); window.profileToForm(); window.validateFields(); window.render();
 };
 
-// Autoejecución al cargar si ya estaba desbloqueado
+// Autoejecución si ya fue desbloqueado previamente
 if(localStorage.getItem("app_permanent_unlocked") === "true") {
-    document.getElementById("lockScreen").classList.add("hide");
-    document.getElementById("appContent").classList.remove("hide");
-    document.getElementById("appNav").classList.remove("hide");
+    if(document.getElementById("lockScreen")) document.getElementById("lockScreen").classList.add("hide");
+    if(document.getElementById("appContent")) document.getElementById("appContent").classList.remove("hide");
+    if(document.getElementById("appNav")) document.getElementById("appNav").classList.remove("hide");
     window.initApp();
 }
 </script></body></html>
