@@ -1,4 +1,4 @@
-<!doctype html> <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>FacturaIA - Control Local</title><!-- Soporte PWA e instalación nativa --><link rel="manifest" href="manifest.json"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="FacturaIA"><link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png"><!-- Importamos el SDK oficial de Google Generative AI para navegadores --><script type="importmap">
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>FacturaIA - Control Local</title><!-- Soporte PWA e instalación nativa --><link rel="manifest" href="manifest.json"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="FacturaIA"><link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png"><!-- Importamos el SDK oficial de Google Generative AI para navegadores --><script type="importmap">
   {
     "imports": {
       "@google/generative-ai": "https://esm.run/@google/generative-ai"
@@ -38,7 +38,7 @@ button{border:0;border-radius:14px;padding:12px 14px;background:var(--acc);color
 .photo{width:100%;max-height:300px;object-fit:contain;border-radius:16px;border:1px solid #30375f;background:#111;margin-top:10px}
 .mini{font-size:12px;color:#b9c0db;margin:6px 0}
 .debug{font-family:ui-monospace,Consolas,monospace;font-size:12px;white-space:pre-wrap;background:#07091b;border:1px solid #2b315c;border-radius:14px;padding:10px;max-height:220px;overflow:auto}
-.bar{height:9px;background:#22284f;border-radius:99px;overflow:hidden;margin:8px 0}
+.bar{height:99px;background:#22284f;border-radius:99px;overflow:hidden;margin:8px 0}
 .bar i{display:block;height:100%;width:0;background:var(--acc);transition:width 0.3s}
 label{display:block;font-size:12px;color:#b9c0db;margin-top:6px}
 .section-title{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -58,16 +58,41 @@ label{display:block;font-size:12px;color:#b9c0db;margin-top:6px}
 }
 #lockScreen .box { max-width: 320px; width: 100%; text-align: center; }
 
-@media(min-width:780px){.grid{grid-template-columns:repeat(4,1fr)}.row{grid-template-columns:repeat(4,1fr)}.row3{grid-template-columns:repeat(3,1fr)}.tabs{left:50%;transform:translateX(-50%);max-width:600px;border-radius:24px 24px 0 0}.wrap{padding-bottom:110px}}</style></head><body>
+@media(min-width:780px){.grid{grid-template-columns:repeat(4,1fr)}.row{grid-template-columns:repeat(4,1fr)}.row3{grid-template-columns:repeat(3,1fr)}.tabs{left:50%;transform:translateX(-50%);max-width:600px;border-radius:24px 24px 0 0}.wrap{padding-bottom:110px}}</style>
 
-<!-- PANTALLA DE ACCESO (SÓLO APARECERÁ LA PRIMERA VEZ EN TU CELULAR) -->
+<script>
+// =========================================================================
+// 🔒 FUNCIONES DE ACCESO GLOBAL (Declaradas antes para evitar ReferenceError)
+// =========================================================================
+window.checkAccess = function() {
+    var inputEl = document.getElementById("passInput");
+    if (!inputEl) return;
+    var p = inputEl.value;
+    if(p === "VVH") {
+        localStorage.setItem("app_permanent_unlocked", "true");
+        document.getElementById("lockScreen").classList.add("hide");
+        document.getElementById("appContent").classList.remove("hide");
+        document.getElementById("appNav").classList.remove("hide");
+        if (typeof window.initApp === "function") {
+            window.initApp();
+        }
+    } else {
+        var errorEl = document.getElementById("lockError");
+        if (errorEl) errorEl.style.display = "block";
+        inputEl.value = "";
+    }
+};
+</script>
+</head><body>
+
+<!-- PANTALLA DE ACCESO -->
 <div id="lockScreen">
     <div class="box card">
         <span style="font-size:40px">🔒</span>
         <h2 style="margin:10px 0 5px 0; font-size: 22px;">Acceso Único</h2>
         <p class="mini" style="margin-bottom:20px">Configura el dispositivo con la contraseña local.</p>
-        <input id="passInput" type="password" class="field" placeholder="Contraseña" style="text-align:center; font-size:18px;" onkeydown="if(event.key==='Enter')checkAccess()">
-        <button onclick="checkAccess()" style="width:100%; margin-top:10px;">Desbloquear para siempre</button>
+        <input id="passInput" type="password" class="field" placeholder="Contraseña" style="text-align:center; font-size:18px;" onkeydown="if(event.key==='Enter')window.checkAccess()">
+        <button onclick="window.checkAccess()" style="width:100%; margin-top:10px;">Desbloquear para siempre</button>
         <p id="lockError" class="mini" style="color:var(--bad); margin-top:10px; font-weight:bold; display:none;">Contraseña incorrecta</p>
     </div>
 </div>
@@ -90,21 +115,6 @@ window.items={};window.photo="";window.sourceCanvas=null;window.profile={name:""
     var s=new Date().toLocaleTimeString()+" | "+t;
     if(window.el("debugApp")){window.el("debugApp").textContent=s+String.fromCharCode(10)+window.el("debugApp").textContent}
     console.log(s);
-};
-
-// --- SISTEMA DE CONTROL DE ACCESO PERMANENTE ---
-window.checkAccess = function() {
-    var p = window.el("passInput").value;
-    if(p === "VVH") {
-        localStorage.setItem("app_permanent_unlocked", "true");
-        window.el("lockScreen").classList.add("hide");
-        window.el("appContent").classList.remove("hide");
-        window.el("appNav").classList.remove("hide");
-        window.initApp();
-    } else {
-        window.el("lockError").style.display = "block";
-        window.el("passInput").value = "";
-    }
 };
 
 window.tab = function(n){
@@ -138,7 +148,6 @@ window.tab = function(n){
 window.analyzeImageWithIA = async function(){
     if(!window.sourceCanvas){alert("Primero toma una foto");return}
     
-    // El descifrado ocurre dinámicamente en memoria utilizando tu PIN
     const REAL_API_KEY = window.decryptKey(ENCRYPTED_KEY, "VVH");
     
     if(!REAL_API_KEY){
@@ -231,11 +240,10 @@ window.initApp = function(){
 };
 
 window.onload = function(){ 
-    // Si ya pusiste la contraseña en este celular antes, pasa de largo directamente
     if(localStorage.getItem("app_permanent_unlocked") === "true") {
-        window.el("lockScreen").classList.add("hide");
-        window.el("appContent").classList.remove("hide");
-        window.el("appNav").classList.remove("hide");
+        document.getElementById("lockScreen").classList.add("hide");
+        document.getElementById("appContent").classList.remove("hide");
+        document.getElementById("appNav").classList.remove("hide");
         window.initApp(); 
     }
 };</script></body></html>
