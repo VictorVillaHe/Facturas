@@ -18,7 +18,7 @@
 </style>
 </head>
 <body>
-<div id="lockScreen"><div class="box card"><div style="font-size:40px">🔒</div><h2>Acceso privado</h2><p class="mini">Ingresa la contraseña local.</p><input id="passInput" type="password" class="field" placeholder="Contraseña"><button id="btnUnlock" style="width:100%">Entrar</button><p id="lockError" class="mini hide" style="color:var(--bad)">Contraseña incorrecta</p></div></div>
+<div id="lockScreen"><div class="box card"><div style="font-size:40px">🔒</div><h2>Acceso privado</h2><p class="mini">Ingresa la contraseña local.</p><input id="passInput" type="password" class="field" placeholder="Contraseña" autocomplete="current-password" autofocus inputmode="text" style="pointer-events:auto!important;user-select:text!important;-webkit-user-select:text!important" ><button id="btnUnlock" style="width:100%">Entrar</button><p id="lockError" class="mini hide" style="color:var(--bad)">Contraseña incorrecta</p></div></div>
 <div id="apiSetupScreen" class="hide"><div class="box card"><div style="font-size:40px">🔑</div><h2>Configurar Gemini API Key</h2><p class="mini">Se guardará en este dispositivo.</p><input id="apiKeyInput" type="password" class="field" placeholder="Gemini API Key"><button id="btnSaveApiKey" style="width:100%">Guardar y continuar</button><p id="apiKeyError" class="mini hide" style="color:var(--bad)">Ingresa una API Key válida.</p></div></div>
 <div id="photoModal" class="modal hide"><div class="modal-box"><div class="section-title"><h3>Foto del ticket</h3><button class="bad" onclick="closePhotoModal()">Cerrar</button></div><img id="modalImg" class="modal-img"></div></div>
 <main id="appContent" class="wrap hide">
