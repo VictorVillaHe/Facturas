@@ -102,7 +102,20 @@ function saveApiKey(){const k=$('apiKeyInput').value.trim();if(k.length<20)retur
 function changeApiKey(){const k=prompt('Nueva Gemini API Key:');if(k?.trim().length>=20){localStorage.setItem('facturaia_gemini_api_key',k.trim());alert('API Key actualizada.')}}
 function initApp(){loadAll();profileToForm();validateFields();render();log('App iniciada correctamente.')}
 Object.assign(window,{tab,render,saveTicket,clearTicketForm,editTicket,completeDefaults:()=>{val('due',addDays($('date').value,30));validateFields()},markCurrentAsSolicitada:()=>val('status','Solicitada'),invoiceNow:()=>openUrl(ticketFromForm()),emailCurrentTicket:()=>openEmail(ticketFromForm()),whatsappCurrentTicket:()=>openWhatsApp(ticketFromForm()),sendCurrentTicketToMe:()=>sendToMe(ticketFromForm()),copyMessageCurrent:()=>copyText(buildMessage(ticketFromForm())),shareTicket:()=>share(ticketFromForm()),detectPossibleDuplicate:()=>alert(findDuplicateForCurrent()?'Posible duplicado encontrado.':'No encontré duplicados.'),openInvoiceUrl:id=>openUrl(items[id]),whatsappTicketById:id=>openWhatsApp(items[id]),sendTicketToMeById:id=>sendToMe(items[id]),copyTicketMessage:id=>copyText(buildMessage(items[id])),shareTicketObj:id=>share(items[id]),setStatus,deleteTicket,exportCSV,exportPendingCSV,exportJSON,saveProfile,copyFiscalProfile,fillDemoProfile,changeApiKey,testApiKey,resetAll,lockApp:()=>{localStorage.removeItem('facturaia_unlocked');location.reload()},openPhotoModalById:id=>{if(!items[id]?.photo)return alert('Este ticket no tiene foto.');$('modalImg').src=items[id].photo;show('photoModal')},closePhotoModal:()=>hide('photoModal'),analyzeImageWithIA});
-$('cam').addEventListener('change',loadPhoto);$('imp').addEventListener('change',importJSON);document.querySelectorAll('.required').forEach(x=>x.addEventListener('input',validateFields));['q','filterStatus','sortBy','viewMode','onlyAlerts'].forEach(id=>$(id).addEventListener(id==='q'?'input':'change',render));$('btnUnlock').onclick=checkAccess;$('passInput').onkeydown=e=>e.key==='Enter'&&checkAccess();$('btnSaveApiKey').onclick=saveApiKey;$('apiKeyInput').onkeydown=e=>e.key==='Enter'&&saveApiKey();if(localStorage.getItem('facturaia_unlocked')==='true')unlockUI();
+$('cam').addEventListener('change',loadPhoto);$('imp').addEventListener('change',importJSON);document.querySelectorAll('.required').forEach(x=>x.addEventListener('input',validateFields));['q','filterStatus','sortBy','viewMode','onlyAlerts'].forEach(id=>$(id).addEventListener(id==='q'?'input':'change',render));$('btnUnlock').onclick=checkAccess;$('passInput').onkeydown=e=>e.key==='Enter'&&checkAccess();$('btnSaveApiKey').onclick=saveApiKey;$('apiKeyInput').onkeydown=e=>e.key==='Enter'&&saveApiKey();if(localStorage.getItem('facturaia_unlocked')==='true'){
+unlockUI();
+  }else{
+show('lockScreen');
+setTimeout(function(){
+const passwordInput = document.getElementById('passInput');
+if(passwordInput){
+passwordInput.disabled = false;
+passwordInput.readOnly = false;
+passwordInput.style.pointerEvents = 'auto';
+passwordInput.focus();
+}
+},300);
+}
 if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(console.error));
 </script>
 </body>
