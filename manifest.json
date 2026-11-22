@@ -1,17 +1,18 @@
 {
-  "name": "Facturación Inteligente IA",
-  "short_name": "FacturaIA",
-  "description": "Gestión local de facturación con IA",
-  "start_url": "./index.html",
-  "display": "standalone",
   "background_color": "#0a0a1a",
-  "theme_color": "#101026",
-  "orientation": "portrait",
+  "description": "Gestión local de facturación con IA",
+  "display": "standalone",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/1041/1041916.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "purpose": "any",
+      "sizes": "any",
+      "src": "./icon.svg",
+      "type": "image/svg+xml"
     }
-  ]
+  ],
+  "name": "Facturación Inteligente IA",
+  "orientation": "portrait",
+  "short_name": "FacturaIA",
+  "start_url": "./index.html",
+  "theme_color": "#101026"
 }
